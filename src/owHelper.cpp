@@ -79,7 +79,7 @@ void owHelper::log_bufferi(const int * buffer, const int element_size, const int
 }
 
 
-void owHelper::generateConfiguration(int stage, float *position_cpp, float *velocity_cpp, float *& elasticConnectionsData_cpp,int & numOfLiquidP, int & numOfElasticP, int & numOfBoundaryP, int & numOfElasticConnections)
+void owHelper::generateConfiguration(int stage, float *position, float *velocity, float *& elasticConnections,int & numOfLiquidP, int & numOfElasticP, int & numOfBoundaryP, int & numOfElasticConnections)
 {
 	// we need to know at least 
 	// 1) sizes of the box which contains the simulation within
@@ -97,19 +97,17 @@ void owHelper::generateConfiguration(int stage, float *position_cpp, float *velo
 	int ny = (int)( ( YMAX - YMIN ) / r0 ); //Y
 	int nz = (int)( ( ZMAX - ZMIN ) / r0 ); //Z
 
-	int nEx = 7;//7
-	int nEy = 4;//3
-	int nEz = 25;//23
-	int nMuscles = 5;
-	int nM,nMi,nMj;
+	int nEx = 9;//7
+	int nEy = 5;//3
+	int nEz = 35;//23
 
 	if(stage==0)
 	{
 		numOfLiquidP = 0;
-		numOfElasticP = nEx*nEy*nEz * nMuscles;
+		numOfElasticP = nEx*nEy*nEz;
 		numOfBoundaryP = 0;
 
-		elasticConnectionsData_cpp = new float[ 4 * numOfElasticP * NEIGHBOR_COUNT ];
+		elasticConnections = new float[ 4 * numOfElasticP * NEIGHBOR_COUNT ];
 	}
 
 	//=============== create elastic particles ==================================================
@@ -117,32 +115,31 @@ void owHelper::generateConfiguration(int stage, float *position_cpp, float *velo
 	{
 		p_type = ELASTIC_PARTICLE;
 
-		for(nM=0;nM<nMuscles;nM++)
 		for(x=0;x<nEx;x+=1.f)
 		for(y=0;y<nEy;y+=1.f)
 		for(z=0;z<nEz;z+=1.f)
 		{
 			//write particle coordinates to corresponding arrays
-			position_cpp[ 4 * i + 0 ] = XMAX/2+x*r0-nEx*r0/2 - r0*(nEx)/2 + r0*(nEx+0.4)*(nM>2);
-			position_cpp[ 4 * i + 1 ] = YMAX/2+y*r0-nEy*r0/2 - 0*YMAX/4;
-			position_cpp[ 4 * i + 2 ] = ZMAX/2+z*r0-nEz*r0/2 - (nM<=2)*(nM-1)*(nEz*r0) - (nM>2)*(r0/2+(nM-4)*r0)*nEz - (nM==1)*r0/2.5 - (nM==2)*r0*2/2.5 + (nM==4)*r0/2.5;
-			position_cpp[ 4 * i + 3 ] = p_type;
+			position[ 4 * i + 0 ] = XMAX/2+x*r0-nEx*r0/2;
+			position[ 4 * i + 1 ] = YMAX/2+y*r0-nEy*r0/2 + YMAX*3/8;
+			position[ 4 * i + 2 ] = ZMAX/2+z*r0-nEz*r0/2;
+			position[ 4 * i + 3 ] = p_type;
 
-			velocity_cpp[ 4 * i + 0 ] = 0;
-			velocity_cpp[ 4 * i + 1 ] = 0;
-			velocity_cpp[ 4 * i + 2 ] = 0;
-			velocity_cpp[ 4 * i + 3 ] = p_type;
+			velocity[ 4 * i + 0 ] = 0;
+			velocity[ 4 * i + 1 ] = 0;
+			velocity[ 4 * i + 2 ] = 0;
+			velocity[ 4 * i + 3 ] = p_type;
 
 			i++;
 		}
 
-		//initialize elastic connections data structure (with NO_PARTICLE_ID values)
+
 		for(int i_ec = 0; i_ec < numOfElasticP * NEIGHBOR_COUNT; i_ec++)
 		{
-			elasticConnectionsData_cpp[ 4 * i_ec + 0 ] = NO_PARTICLE_ID;
-			elasticConnectionsData_cpp[ 4 * i_ec + 1 ] = 0;
-			elasticConnectionsData_cpp[ 4 * i_ec + 2 ] = 0;
-			elasticConnectionsData_cpp[ 4 * i_ec + 3 ] = 0; 
+			elasticConnections[ 4 * i_ec + 0 ] = NO_PARTICLE_ID;
+			elasticConnections[ 4 * i_ec + 1 ] = 0;
+			elasticConnections[ 4 * i_ec + 2 ] = 0;
+			elasticConnections[ 4 * i_ec + 3 ] = 0;
 		}
 
 		float r2ij;
@@ -151,18 +148,15 @@ void owHelper::generateConfiguration(int stage, float *position_cpp, float *velo
 		for(int i_ec = 0; i_ec < numOfElasticP; i_ec++)
 		{
 			ecc = 0;
-			float test;
-			nMi = i_ec*nMuscles/numOfElasticP;
+			float test, test1, test2;
 
 			for(int j_ec = 0; j_ec < numOfElasticP; j_ec++)
 			{
-				nMj = j_ec*nMuscles/numOfElasticP;
-
 				if(i_ec!=j_ec)
 				{
-					dx2 = (position_cpp[ 4 * i_ec + 0 ] - position_cpp[ 4 * j_ec + 0 ]);
-					dy2 = (position_cpp[ 4 * i_ec + 1 ] - position_cpp[ 4 * j_ec + 1 ]);
-					dz2 = (position_cpp[ 4 * i_ec + 2 ] - position_cpp[ 4 * j_ec + 2 ]);
+					dx2 = (position[ 4 * i_ec + 0 ] - position[ 4 * j_ec + 0 ]);
+					dy2 = (position[ 4 * i_ec + 1 ] - position[ 4 * j_ec + 1 ]);
+					dz2 = (position[ 4 * i_ec + 2 ] - position[ 4 * j_ec + 2 ]);
 					dx2 *= dx2;
 					dy2 *= dy2;
 					dz2 *= dz2;
@@ -170,12 +164,10 @@ void owHelper::generateConfiguration(int stage, float *position_cpp, float *velo
 
 					if(r2ij<=r0*r0*3.05f)
 					{
-						elasticConnectionsData_cpp[ 4 * ( NEIGHBOR_COUNT * i_ec + ecc) + 0 ] = ((float)j_ec) + 0.1f;				// index of j-th particle in a pair connected with spring
-						elasticConnectionsData_cpp[ 4 * ( NEIGHBOR_COUNT * i_ec + ecc) + 1 ] = (float)sqrt(r2ij)*simulationScale;	// resting density; that's why we use float type for elasticConnectionsData_cpp
-						elasticConnectionsData_cpp[ 4 * ( NEIGHBOR_COUNT * i_ec + ecc) + 2 ] = test = 0;							// type of connection; 0 - ordinary spring, 1 - muscle
-						if(nMi==nMj)
-						elasticConnectionsData_cpp[ 4 * ( NEIGHBOR_COUNT * i_ec + ecc) + 2 ] = test = 0 + (1.1f+nMi)*((dz2>100*dx2)&&(dz2>100*dy2));// this line is for muscles
-						elasticConnectionsData_cpp[ 4 * ( NEIGHBOR_COUNT * i_ec + ecc) + 3 ] = 0;									// not in use yet
+						elasticConnections[ 4 * ( NEIGHBOR_COUNT * i_ec + ecc) + 0 ] = test1 = ((float)j_ec) + 0.1f;//connect elastic particles 0 and 1
+						elasticConnections[ 4 * ( NEIGHBOR_COUNT * i_ec + ecc) + 1 ] = test2 = (float)sqrt(r2ij)*simulationScale;
+						elasticConnections[ 4 * ( NEIGHBOR_COUNT * i_ec + ecc) + 2 ] = test = 0 + 1.1*((dz2>100*dx2)&&(dz2>100*dy2));
+						elasticConnections[ 4 * ( NEIGHBOR_COUNT * i_ec + ecc) + 3 ] = 0;
 						ecc++;
 					}
 
@@ -200,13 +192,11 @@ void owHelper::generateConfiguration(int stage, float *position_cpp, float *velo
 	}
 
 	//============= create volume of liquid =========================================================================
-
 	p_type = LIQUID_PARTICLE;
-	//int first_liquid_particle = 1;
-	//float h_fall;
-	for(x = r0*23;x<(XMAX-XMIN)-r0*23;x += r0)
-	for(y = r0*3;y<(YMAX-YMIN)*0.0+9.0*r0;y += r0)
-	for(z = r0*23;z<(ZMAX-ZMIN)-r0*23;z += r0)
+
+	for(x = 15*r0/2;x<(XMAX-XMIN)/5 +3*r0/2;x += r0)
+	for(y =  3*r0/2;y<(YMAX-YMIN)   -3*r0/2;y += r0)
+	for(z =  3*r0/2+(ZMAX-ZMIN)*3/10;z<(ZMAX-ZMIN)*7/10-3*r0/2;z += r0)
 	{
 						// stage==0 - preliminary run
 		if(stage==1)	// stage==1 - final run
@@ -217,31 +207,20 @@ void owHelper::generateConfiguration(int stage, float *position_cpp, float *velo
 				exit(-3);
 			}
 			//write particle coordinates to corresponding arrays
-			position_cpp[ 4 * i + 0 ] = x;
-			position_cpp[ 4 * i + 1 ] = y;
-			position_cpp[ 4 * i + 2 ] = z;
+			position[ 4 * i + 0 ] = x;
+			position[ 4 * i + 1 ] = y;
+			position[ 4 * i + 2 ] = z;
+			position[ 4 * i + 3 ] = p_type;
 
-			position_cpp[ 4 * i + 3 ] = p_type;
-
-			velocity_cpp[ 4 * i + 0 ] = 0;
-			velocity_cpp[ 4 * i + 1 ] = 0;
-			velocity_cpp[ 4 * i + 2 ] = 0;
-			velocity_cpp[ 4 * i + 3 ] = p_type;//if particle type is already defined in 'position', we don't need its duplicate here, right?
-			
-			/*//just for debug
-			if(first_liquid_particle)
-			{
-				first_liquid_particle = 0;
-				position[ 4 * i + 0 ] = (XMAX-XMIN)*0.35f;
-				position[ 4 * i + 1 ] = (YMAX-YMIN)*0.454f;
-				position[ 4 * i + 2 ] = (ZMAX-ZMIN)*0.5f;
-			}*/
+			velocity[ 4 * i + 0 ] = 0;
+			velocity[ 4 * i + 1 ] = 0;
+			velocity[ 4 * i + 2 ] = 0;
+			velocity[ 4 * i + 3 ] = p_type;//if particle type is already defined in 'position', we don't need its duplicate here, right?
 		}
 
 		i++; // necessary for both stages
 	}
 	// end
-
 
 	if(stage==0) 
 	{
@@ -263,66 +242,66 @@ void owHelper::generateConfiguration(int stage, float *position_cpp, float *velo
 				{
 					if( ((ix==0)||(ix==nx-1)) && ((iy==0)||(iy==ny-1)) )//corners
 					{
-						position_cpp[ 4 * i + 0 ] = ix*r0 + r0/2;//x
-						position_cpp[ 4 * i + 1 ] = iy*r0 + r0/2;//y
-						position_cpp[ 4 * i + 2 ] =  0*r0 + r0/2;//z
-						position_cpp[ 4 * i + 3 ] = p_type;
-						velocity_cpp[ 4 * i + 0 ] = (1.f*(ix==0)-1*(ix==nx-1))/sqrt(3.f);//norm x
-						velocity_cpp[ 4 * i + 1 ] = (1.f*(iy==0)-1*(iy==ny-1))/sqrt(3.f);//norm y
-						velocity_cpp[ 4 * i + 2 ] =  1.f/sqrt(3.f);//norm z
-						velocity_cpp[ 4 * i + 3 ] = p_type;
+						position[ 4 * i + 0 ] = ix*r0 + r0/2;//x
+						position[ 4 * i + 1 ] = iy*r0 + r0/2;//y
+						position[ 4 * i + 2 ] =  0*r0 + r0/2;//z
+						position[ 4 * i + 3 ] = p_type;
+						velocity[ 4 * i + 0 ] = (1.f*(ix==0)-1*(ix==nx-1))/sqrt(3.f);//norm x
+						velocity[ 4 * i + 1 ] = (1.f*(iy==0)-1*(iy==ny-1))/sqrt(3.f);//norm y
+						velocity[ 4 * i + 2 ] =  1.f/sqrt(3.f);//norm z
+						velocity[ 4 * i + 3 ] = p_type;
 						i++;
-						position_cpp[ 4 * i + 0 ] = ix*r0 + r0/2;//x
-						position_cpp[ 4 * i + 1 ] = iy*r0 + r0/2;//y
-						position_cpp[ 4 * i + 2 ] = (nz-1)*r0 + r0/2;//z
-						position_cpp[ 4 * i + 3 ] = p_type;
-						velocity_cpp[ 4 * i + 0 ] = (1*(ix==0)-1*(ix==nx-1))/sqrt(3.f);//norm x
-						velocity_cpp[ 4 * i + 1 ] = (1*(iy==0)-1*(iy==ny-1))/sqrt(3.f);//norm y
-						velocity_cpp[ 4 * i + 2 ] = -1.f/sqrt(3.f);//norm z
-						velocity_cpp[ 4 * i + 3 ] = p_type;
+						position[ 4 * i + 0 ] = ix*r0 + r0/2;//x
+						position[ 4 * i + 1 ] = iy*r0 + r0/2;//y
+						position[ 4 * i + 2 ] = (nz-1)*r0 + r0/2;//z
+						position[ 4 * i + 3 ] = p_type;
+						velocity[ 4 * i + 0 ] = (1*(ix==0)-1*(ix==nx-1))/sqrt(3.f);//norm x
+						velocity[ 4 * i + 1 ] = (1*(iy==0)-1*(iy==ny-1))/sqrt(3.f);//norm y
+						velocity[ 4 * i + 2 ] = -1.f/sqrt(3.f);//norm z
+						velocity[ 4 * i + 3 ] = p_type;
 						i++;
 					}
 					else //edges
 					{
-						position_cpp[ 4 * i + 0 ] = ix*r0 + r0/2;//x
-						position_cpp[ 4 * i + 1 ] = iy*r0 + r0/2;//y
-						position_cpp[ 4 * i + 2 ] =  0*r0 + r0/2;//z
-						position_cpp[ 4 * i + 3 ] = p_type;
-						velocity_cpp[ 4 * i + 0 ] =  1.f*((ix==0)-(ix==nx-1))/sqrt(2.f);//norm x
-						velocity_cpp[ 4 * i + 1 ] =  1.f*((iy==0)-(iy==ny-1))/sqrt(2.f);//norm y
-						velocity_cpp[ 4 * i + 2 ] =  1.f/sqrt(2.f);//norm z
-						velocity_cpp[ 4 * i + 3 ] = p_type;
+						position[ 4 * i + 0 ] = ix*r0 + r0/2;//x
+						position[ 4 * i + 1 ] = iy*r0 + r0/2;//y
+						position[ 4 * i + 2 ] =  0*r0 + r0/2;//z
+						position[ 4 * i + 3 ] = p_type;
+						velocity[ 4 * i + 0 ] =  1.f*((ix==0)-(ix==nx-1))/sqrt(2.f);//norm x
+						velocity[ 4 * i + 1 ] =  1.f*((iy==0)-(iy==ny-1))/sqrt(2.f);//norm y
+						velocity[ 4 * i + 2 ] =  1.f/sqrt(2.f);//norm z
+						velocity[ 4 * i + 3 ] = p_type;
 						i++;
-						position_cpp[ 4 * i + 0 ] = ix*r0 + r0/2;//x
-						position_cpp[ 4 * i + 1 ] = iy*r0 + r0/2;//y
-						position_cpp[ 4 * i + 2 ] = (nz-1)*r0 + r0/2;//z
-						position_cpp[ 4 * i + 3 ] = p_type;
-						velocity_cpp[ 4 * i + 0 ] =  1.f*((ix==0)-(ix==nx-1))/sqrt(2.f);//norm x
-						velocity_cpp[ 4 * i + 1 ] =  1.f*((iy==0)-(iy==ny-1))/sqrt(2.f);//norm y
-						velocity_cpp[ 4 * i + 2 ] = -1.f/sqrt(2.f);//norm z
-						velocity_cpp[ 4 * i + 3 ] = p_type;
+						position[ 4 * i + 0 ] = ix*r0 + r0/2;//x
+						position[ 4 * i + 1 ] = iy*r0 + r0/2;//y
+						position[ 4 * i + 2 ] = (nz-1)*r0 + r0/2;//z
+						position[ 4 * i + 3 ] = p_type;
+						velocity[ 4 * i + 0 ] =  1.f*((ix==0)-(ix==nx-1))/sqrt(2.f);//norm x
+						velocity[ 4 * i + 1 ] =  1.f*((iy==0)-(iy==ny-1))/sqrt(2.f);//norm y
+						velocity[ 4 * i + 2 ] = -1.f/sqrt(2.f);//norm z
+						velocity[ 4 * i + 3 ] = p_type;
 						i++;
 					}
 				}
 				else //planes
 				{
-						position_cpp[ 4 * i + 0 ] = ix*r0 + r0/2;//x
-						position_cpp[ 4 * i + 1 ] = iy*r0 + r0/2;//y
-						position_cpp[ 4 * i + 2 ] =  0*r0 + r0/2;//z
-						position_cpp[ 4 * i + 3 ] = p_type;
-						velocity_cpp[ 4 * i + 0 ] =  0;//norm x
-						velocity_cpp[ 4 * i + 1 ] =  0;//norm y
-						velocity_cpp[ 4 * i + 2 ] =  1;//norm z
-						velocity_cpp[ 4 * i + 3 ] = p_type;
+						position[ 4 * i + 0 ] = ix*r0 + r0/2;//x
+						position[ 4 * i + 1 ] = iy*r0 + r0/2;//y
+						position[ 4 * i + 2 ] =  0*r0 + r0/2;//z
+						position[ 4 * i + 3 ] = p_type;
+						velocity[ 4 * i + 0 ] =  0;//norm x
+						velocity[ 4 * i + 1 ] =  0;//norm y
+						velocity[ 4 * i + 2 ] =  1;//norm z
+						velocity[ 4 * i + 3 ] = p_type;
 						i++;
-						position_cpp[ 4 * i + 0 ] = ix*r0 + r0/2;//x
-						position_cpp[ 4 * i + 1 ] = iy*r0 + r0/2;//y
-						position_cpp[ 4 * i + 2 ] = (nz-1)*r0 + r0/2;//z
-						position_cpp[ 4 * i + 3 ] = p_type;
-						velocity_cpp[ 4 * i + 0 ] =  0;//norm x
-						velocity_cpp[ 4 * i + 1 ] =  0;//norm y
-						velocity_cpp[ 4 * i + 2 ] = -1;//norm z
-						velocity_cpp[ 4 * i + 3 ] = p_type;
+						position[ 4 * i + 0 ] = ix*r0 + r0/2;//x
+						position[ 4 * i + 1 ] = iy*r0 + r0/2;//y
+						position[ 4 * i + 2 ] = (nz-1)*r0 + r0/2;//z
+						position[ 4 * i + 3 ] = p_type;
+						velocity[ 4 * i + 0 ] =  0;//norm x
+						velocity[ 4 * i + 1 ] =  0;//norm y
+						velocity[ 4 * i + 2 ] = -1;//norm z
+						velocity[ 4 * i + 3 ] = p_type;
 						i++;
 				}
 			}
@@ -336,44 +315,44 @@ void owHelper::generateConfiguration(int stage, float *position_cpp, float *velo
 				//edges
 				if((ix==0)||(ix==nx-1))
 				{
-					position_cpp[ 4 * i + 0 ] = ix*r0 + r0/2;//x
-					position_cpp[ 4 * i + 1 ] =  0*r0 + r0/2;//y
-					position_cpp[ 4 * i + 2 ] = iz*r0 + r0/2;//z
-					position_cpp[ 4 * i + 3 ] = p_type;
-					velocity_cpp[ 4 * i + 0 ] =  0;//norm x
-					velocity_cpp[ 4 * i + 1 ] =  1.f/sqrt(2.f);//norm y
-					velocity_cpp[ 4 * i + 2 ] =  1.f*((iz==0)-(iz==nz-1))/sqrt(2.f);//norm z
-					velocity_cpp[ 4 * i + 3 ] = p_type;
+					position[ 4 * i + 0 ] = ix*r0 + r0/2;//x
+					position[ 4 * i + 1 ] =  0*r0 + r0/2;//y
+					position[ 4 * i + 2 ] = iz*r0 + r0/2;//z
+					position[ 4 * i + 3 ] = p_type;
+					velocity[ 4 * i + 0 ] =  0;//norm x
+					velocity[ 4 * i + 1 ] =  1.f/sqrt(2.f);//norm y
+					velocity[ 4 * i + 2 ] =  1.f*((iz==0)-(iz==nz-1))/sqrt(2.f);//norm z
+					velocity[ 4 * i + 3 ] = p_type;
 					i++;
-					position_cpp[ 4 * i + 0 ] = ix*r0 + r0/2;//x
-					position_cpp[ 4 * i + 1 ] = (ny-1)*r0 + r0/2;//y
-					position_cpp[ 4 * i + 2 ] = iz*r0 + r0/2;//z
-					position_cpp[ 4 * i + 3 ] = p_type;
-					velocity_cpp[ 4 * i + 0 ] =  0;//norm x
-					velocity_cpp[ 4 * i + 1 ] = -1.f/sqrt(2.f);//norm y
-					velocity_cpp[ 4 * i + 2 ] =  1.f*((iz==0)-(iz==nz-1))/sqrt(2.f);//norm z
-					velocity_cpp[ 4 * i + 3 ] = p_type;
+					position[ 4 * i + 0 ] = ix*r0 + r0/2;//x
+					position[ 4 * i + 1 ] = (ny-1)*r0 + r0/2;//y
+					position[ 4 * i + 2 ] = iz*r0 + r0/2;//z
+					position[ 4 * i + 3 ] = p_type;
+					velocity[ 4 * i + 0 ] =  0;//norm x
+					velocity[ 4 * i + 1 ] = -1.f/sqrt(2.f);//norm y
+					velocity[ 4 * i + 2 ] =  1.f*((iz==0)-(iz==nz-1))/sqrt(2.f);//norm z
+					velocity[ 4 * i + 3 ] = p_type;
 					i++;
 				}
 				else //planes
 				{
-					position_cpp[ 4 * i + 0 ] = ix*r0 + r0/2;//x
-					position_cpp[ 4 * i + 1 ] =  0*r0 + r0/2;//y
-					position_cpp[ 4 * i + 2 ] = iz*r0 + r0/2;//z
-					position_cpp[ 4 * i + 3 ] = p_type;
-					velocity_cpp[ 4 * i + 0 ] =  0;//norm x
-					velocity_cpp[ 4 * i + 1 ] =  1;//norm y
-					velocity_cpp[ 4 * i + 2 ] =  0;//norm z
-					velocity_cpp[ 4 * i + 3 ] = p_type;
+					position[ 4 * i + 0 ] = ix*r0 + r0/2;//x
+					position[ 4 * i + 1 ] =  0*r0 + r0/2;//y
+					position[ 4 * i + 2 ] = iz*r0 + r0/2;//z
+					position[ 4 * i + 3 ] = p_type;
+					velocity[ 4 * i + 0 ] =  0;//norm x
+					velocity[ 4 * i + 1 ] =  1;//norm y
+					velocity[ 4 * i + 2 ] =  0;//norm z
+					velocity[ 4 * i + 3 ] = p_type;
 					i++;
-					position_cpp[ 4 * i + 0 ] = ix*r0 + r0/2;//x
-					position_cpp[ 4 * i + 1 ] = (ny-1)*r0 + r0/2;//y
-					position_cpp[ 4 * i + 2 ] = iz*r0 + r0/2;//z
-					position_cpp[ 4 * i + 3 ] = p_type;
-					velocity_cpp[ 4 * i + 0 ] =  0;//norm x
-					velocity_cpp[ 4 * i + 1 ] = -1;//norm y
-					velocity_cpp[ 4 * i + 2 ] =  0;//norm z
-					velocity_cpp[ 4 * i + 3 ] = p_type;
+					position[ 4 * i + 0 ] = ix*r0 + r0/2;//x
+					position[ 4 * i + 1 ] = (ny-1)*r0 + r0/2;//y
+					position[ 4 * i + 2 ] = iz*r0 + r0/2;//z
+					position[ 4 * i + 3 ] = p_type;
+					velocity[ 4 * i + 0 ] =  0;//norm x
+					velocity[ 4 * i + 1 ] = -1;//norm y
+					velocity[ 4 * i + 2 ] =  0;//norm z
+					velocity[ 4 * i + 3 ] = p_type;
 					i++;
 				}
 			}
@@ -384,23 +363,23 @@ void owHelper::generateConfiguration(int stage, float *position_cpp, float *velo
 		{
 			for(iz=1;iz<nz-1;iz++)
 			{
-				position_cpp[ 4 * i + 0 ] =  0*r0 + r0/2;//x
-				position_cpp[ 4 * i + 1 ] = iy*r0 + r0/2;//y
-				position_cpp[ 4 * i + 2 ] = iz*r0 + r0/2;//z
-				position_cpp[ 4 * i + 3 ] = p_type;
-				velocity_cpp[ 4 * i + 0 ] =  1;//norm x
-				velocity_cpp[ 4 * i + 1 ] =  0;//norm y
-				velocity_cpp[ 4 * i + 2 ] =  0;//norm z
-				velocity_cpp[ 4 * i + 3 ] = p_type;
+				position[ 4 * i + 0 ] =  0*r0 + r0/2;//x
+				position[ 4 * i + 1 ] = iy*r0 + r0/2;//y
+				position[ 4 * i + 2 ] = iz*r0 + r0/2;//z
+				position[ 4 * i + 3 ] = p_type;
+				velocity[ 4 * i + 0 ] =  1;//norm x
+				velocity[ 4 * i + 1 ] =  0;//norm y
+				velocity[ 4 * i + 2 ] =  0;//norm z
+				velocity[ 4 * i + 3 ] = p_type;
 				i++;
-				position_cpp[ 4 * i + 0 ] = (nx-1)*r0 + r0/2;//x
-				position_cpp[ 4 * i + 1 ] = iy*r0 + r0/2;//y
-				position_cpp[ 4 * i + 2 ] = iz*r0 + r0/2;//z
-				position_cpp[ 4 * i + 3 ] = p_type;
-				velocity_cpp[ 4 * i + 0 ] = -1;//norm x
-				velocity_cpp[ 4 * i + 1 ] =  0;//norm y
-				velocity_cpp[ 4 * i + 2 ] =  0;//norm z
-				velocity_cpp[ 4 * i + 3 ] = p_type;
+				position[ 4 * i + 0 ] = (nx-1)*r0 + r0/2;//x
+				position[ 4 * i + 1 ] = iy*r0 + r0/2;//y
+				position[ 4 * i + 2 ] = iz*r0 + r0/2;//z
+				position[ 4 * i + 3 ] = p_type;
+				velocity[ 4 * i + 0 ] = -1;//norm x
+				velocity[ 4 * i + 1 ] =  0;//norm y
+				velocity[ 4 * i + 2 ] =  0;//norm z
+				velocity[ 4 * i + 3 ] = p_type;
 				i++;
 			}
 		}
@@ -425,10 +404,39 @@ void owHelper::generateConfiguration(int stage, float *position_cpp, float *velo
 			printf("\nWarning! Preliminary [%d] and final [%d] particle count are different\n",PARTICLE_COUNT,i);
 			exit(-4);
 		}
-		//loadConfigToFile(position, velocity, elasticConnections, numOfElasticP*NEIGHBOR_COUNT);
+		loadConfigToFile(position,velocity,elasticConnections,NEIGHBOR_COUNT*numOfElasticP);
 	}
-	
+
 	return;
+}
+
+void owHelper::preLoadConfiguration()
+{
+	try
+	{
+		PARTICLE_COUNT = 0;
+		ifstream positionFile ("./configuration/position_780.txt");
+		int i = 0;
+		float x, y, z, p_type;
+		if( positionFile.is_open() )
+		{
+			while( positionFile.good() )
+			{
+				p_type = -1.1f;//reinitialize 
+				positionFile >> x >> y >> z >> p_type;
+				if(p_type>=0) PARTICLE_COUNT++;//last line of a file can contain only "\n", then p_type thanks to reinitialization will indicate the problem via negative value
+				else break;//end of file
+			}
+		}
+
+		PARTICLE_COUNT_RoundedUp = ((( PARTICLE_COUNT - 1 ) / local_NDRange_size ) + 1 ) * local_NDRange_size;
+
+		printf("\nConfiguration we are going to load contains %d particles. Now plan to allocate memory for them.\n",PARTICLE_COUNT);
+	}
+	catch(std::exception &e){
+		std::cout << "ERROR: " << e.what() << std::endl;
+		exit( -1 );
+	}
 }
 void owHelper::loadConfigToFile(float * position, float * velocity, float * elasticConnection, int numofEC, const char * file_name)
 {
@@ -460,40 +468,12 @@ void owHelper::loadConfigToFile(float * position, float * velocity, float * elas
 		exit( -1 );
 	}
 }
-void owHelper::preLoadConfiguration()
-{
-	try
-	{
-		PARTICLE_COUNT = 0;
-		ifstream positionFile ("./configuration/position.txt");
-		int i = 0;
-		float x, y, z, p_type;
-		if( positionFile.is_open() )
-		{
-			while( positionFile.good() )
-			{
-				p_type = -1.1f;//reinitialize 
-				positionFile >> x >> y >> z >> p_type;
-				if(p_type>=0) PARTICLE_COUNT++;//last line of a file can contain only "\n", then p_type thanks to reinitialization will indicate the problem via negative value
-				else break;//end of file
-			}
-		}
-		positionFile.close();
-		PARTICLE_COUNT_RoundedUp = ((( PARTICLE_COUNT - 1 ) / local_NDRange_size ) + 1 ) * local_NDRange_size;
-		printf("\nConfiguration we are going to load contains %d particles. Now plan to allocate memory for them.\n",PARTICLE_COUNT);
-	}
-	catch(std::exception &e){
-		std::cout << "ERROR: " << e.what() << std::endl;
-		exit( -1 );
-	}
-}
-
 void owHelper::loadConfiguration(float *position, float *velocity, float *& elasticConnections,int & numOfLiquidP, int & numOfElasticP, int & numOfBoundaryP, int & numOfElasticConnections)
 {
 
 	try
 	{
-		ifstream positionFile ("./configuration/position.txt");
+		ifstream positionFile ("./configuration/position_780.txt");
 		int i = 0;
 		float x, y, z, p_type;
 		if( positionFile.is_open() )
@@ -522,7 +502,7 @@ void owHelper::loadConfiguration(float *position, float *velocity, float *& elas
 		}
 		else 
 			throw std::runtime_error("Could not open file position.txt");
-		ifstream velocityFile ("./configuration/velocity.txt");
+		ifstream velocityFile ("./configuration/velocity_780.txt");
 		i = 0;
 		if( velocityFile.is_open() )
 		{
@@ -541,7 +521,7 @@ void owHelper::loadConfiguration(float *position, float *velocity, float *& elas
 			throw std::runtime_error("Could not open file velocity.txt");
 		//TODO NEXT BLOCK WILL BE new load of elastic connections
 		if(numOfElasticP != 0){
-			ifstream elasticConectionsFile ("./configuration/elasticconnections.txt");
+			ifstream elasticConectionsFile ("./configuration/connectio_test_780.txt");
 			elasticConnections = new float[ 4 * numOfElasticP * NEIGHBOR_COUNT ];
 			/*int numElasticConnections = 0;
 			for(i=0;i<numOfElasticP * NEIGHBOR_COUNT;i++)

@@ -14,7 +14,7 @@ extern int numOfBoundaryP = 0;
 int * _particleIndex;
 unsigned int * gridNextNonEmptyCellBuffer;
 extern int gridCellCount;
-extern float * muscle_activation_signal_buffer;
+extern float muscle_activation_signal;
 
 owPhysicsFluidSimulator::owPhysicsFluidSimulator(owHelper * helper)
 {
@@ -23,50 +23,67 @@ owPhysicsFluidSimulator::owPhysicsFluidSimulator(owHelper * helper)
 	try{
 		if(generateInitialConfiguration)
 		// GENERATE THE SCENE
-		owHelper::generateConfiguration(0, position_cpp, velocity_cpp, elasticConnectionsData_cpp, numOfLiquidP, numOfElasticP, numOfBoundaryP, numOfElasticConnections);	
+		owHelper::generateConfiguration(0, positionBuffer, velocityBuffer, elasticConnections, numOfLiquidP, numOfElasticP, numOfBoundaryP, numOfElasticConnections);	
 		else								
 		// LOAD FROM FILE
 		owHelper::preLoadConfiguration();	
 											//=======================
 
-		position_cpp = new float[ 8 * PARTICLE_COUNT ];
-		velocity_cpp = new float[ 4 * PARTICLE_COUNT ];
+		positionBuffer = new float[ 4 * PARTICLE_COUNT ];
+		velocityBuffer = new float[ 4 * PARTICLE_COUNT ];
 		_particleIndex = new   int[ 2 * PARTICLE_COUNT ];
 		gridNextNonEmptyCellBuffer = new unsigned int[gridCellCount+1];
-		muscle_activation_signal_buffer = new float [MUSCLE_COUNT];
-		loadConfigStep = -1;
-		for(int i=0;i<MUSCLE_COUNT;i++)
-		{
-			muscle_activation_signal_buffer[i] = 0.f;
-		}
 
 		//The buffers listed below are only for usability and debug
-		density_cpp = new float[ 1 * PARTICLE_COUNT ];
-		particleIndex_cpp = new unsigned int[PARTICLE_COUNT * 2];
-		acceleration_cpp = new float[PARTICLE_COUNT * 4];//TODO REMOVE IT AFTER FIXING
+		densityBuffer = new float[ 1 * PARTICLE_COUNT ];
+		particleIndexBuffer = new unsigned int[PARTICLE_COUNT * 2];
+		accelerationBuffer = new float[PARTICLE_COUNT * 4];//TODO REMOVE IT AFTER FIXING
 		
 		if(generateInitialConfiguration)	
 		// GENERATE THE SCENE
-		owHelper::generateConfiguration(1,position_cpp, velocity_cpp, elasticConnectionsData_cpp, numOfLiquidP, numOfElasticP, numOfBoundaryP, numOfElasticConnections );	
+		owHelper::generateConfiguration(1,positionBuffer, velocityBuffer, elasticConnections, numOfLiquidP, numOfElasticP, numOfBoundaryP, numOfElasticConnections);	
 		else 
 		// LOAD FROM FILE	
-		owHelper::loadConfiguration( position_cpp, velocity_cpp, elasticConnectionsData_cpp, numOfLiquidP, numOfElasticP, numOfBoundaryP, numOfElasticConnections );		//Load configuration from file to buffer
+		owHelper::loadConfiguration( positionBuffer, velocityBuffer, elasticConnections, numOfLiquidP, numOfElasticP, numOfBoundaryP, numOfElasticConnections );		//Load configuration from file to buffer
 											
 		if(numOfElasticP != 0){
-			ocl_solver = new owOpenCLSolver(position_cpp, velocity_cpp, elasticConnectionsData_cpp );	//Create new openCLsolver instance
+			ocl_solver = new owOpenCLSolver(positionBuffer,velocityBuffer,elasticConnections);	//Create new openCLsolver instance
 		}else
-			ocl_solver = new owOpenCLSolver(position_cpp,velocity_cpp);	//Create new openCLsolver instance
+			ocl_solver = new owOpenCLSolver(positionBuffer,velocityBuffer);	//Create new openCLsolver instance
 		this->helper = helper;
 	}catch( std::exception &e ){
 		std::cout << "ERROR: " << e.what() << std::endl;
 		exit( -1 );
 	}
 }
-
 double owPhysicsFluidSimulator::simulationStep()
 {
 	//PCISPH algorithm
 	int iter = 0;
+
+	int iteration_to_log = 100;
+
+	if(iterationCount == iteration_to_log)
+	{
+		// print positions
+		ocl_solver->read_position_b(positionBuffer);
+		std::ostringstream posFile;
+		posFile << "position_log_" << iterationCount  << ".txt";
+		this->helper->log_bufferf(positionBuffer, 4, PARTICLE_COUNT, posFile.str().c_str());
+
+		// print velocities
+		ocl_solver->read_velocity_b(velocityBuffer);
+		std::ostringstream velFile;
+		velFile << "velocity_log_" << iterationCount << ".txt";
+		this->helper->log_bufferf(velocityBuffer, 4, PARTICLE_COUNT, velFile.str().c_str());
+
+		// print elastic
+		float * elastic_connections_to_log = this->getElasticConnections();
+		std::ostringstream connFile;
+		connFile << "elastic_log_" << iterationCount << ".txt";
+		this->helper->log_bufferf(elastic_connections_to_log, 4, numOfElasticP * NEIGHBOR_COUNT, connFile.str().c_str());
+	}
+
 	helper->refreshTime();
 	printf("\n[[ Step %d ]]\n",iterationCount);
 	try{
@@ -90,21 +107,13 @@ double owPhysicsFluidSimulator::simulationStep()
 			iter++;
 		}while( iter < maxIteration );
 		ocl_solver->_run_pcisph_integrate();						helper->watch_report("_runPCISPH: \t\t%9.3f ms\t3 iteration(s)\n");
-		ocl_solver->read_position_buffer(position_cpp);				helper->watch_report("_readBuffer: \t\t%9.3f ms\n"); 
+		ocl_solver->read_position_b(positionBuffer);				helper->watch_report("_readBuffer: \t\t%9.3f ms\n"); 
 		//END PCISPH algorithm
 		printf("------------------------------------\n");
 		printf("_Total_step_time:\t%9.3f ms\n",helper->get_elapsedTime());
 		printf("------------------------------------\n");
-		if(loadConfigStep == iterationCount){
-			std::stringstream ss;//create a stringstream
-			ss << iterationCount;//add number to the stream
-			std::string file_name = "./configuration/out_config_step_";
-			file_name += ss.str() + ".txt";
-			owHelper::loadConfigToFile(position_cpp,velocity_cpp,elasticConnectionsData_cpp,numOfElasticP * NEIGHBOR_COUNT, file_name.c_str());
-		}
 		iterationCount++;
-		//for(int i=0;i<MUSCLE_COUNT;i++) { muscle_activation_signal_buffer[i] *= 0.9f; }
-		ocl_solver->updateMuscleActivityData(muscle_activation_signal_buffer);
+		muscle_activation_signal *= 0.9f;
 		return helper->get_elapsedTime();
 	}catch(std::exception &e){
 		std::cout << "ERROR: " << e.what() << std::endl;
@@ -115,11 +124,10 @@ double owPhysicsFluidSimulator::simulationStep()
 //Destructor
 owPhysicsFluidSimulator::~owPhysicsFluidSimulator(void)
 {
-	delete [] position_cpp;
-	delete [] velocity_cpp;
-	delete [] density_cpp;
-	delete [] particleIndex_cpp;
-	delete [] muscle_activation_signal_buffer;
+	delete [] positionBuffer;
+	delete [] velocityBuffer;
+	delete [] densityBuffer;
+	delete [] particleIndexBuffer;
 	ocl_solver->~owOpenCLSolver();
 }
 
@@ -131,7 +139,7 @@ float calcDelta()
     float sum1_x = 0.f;
 	float sum1_y = 0.f;
 	float sum1_z = 0.f;
-    double sum1 = 0.0, sum2 = 0.0;
+    float sum1 = 0.f, sum2 = 0.f;
 	float v_x = 0.f;
 	float v_y = 0.f;
 	float v_z = 0.f;
@@ -147,7 +155,7 @@ float calcDelta()
 
         dist = sqrt(v_x*v_x+v_y*v_y+v_z*v_z);//scaled, right?
 
-        if (dist <= h*simulationScale)
+        if (dist <= h)
         {
 			h_r_2 = pow((h*simulationScale - dist),2);//scaled
 
@@ -159,7 +167,5 @@ float calcDelta()
         }
     }
 	sum1 = sum1_x*sum1_x + sum1_y*sum1_y + sum1_z*sum1_z;
-	double result = 1.0 / (beta * gradWspikyCoefficient * gradWspikyCoefficient * (sum1 + sum2));
-	//return  1.0f / (beta * gradWspikyCoefficient * gradWspikyCoefficient * (sum1 + sum2));
-	return (float)result;
+	return  1.0f / (beta * gradWspikyCoefficient * gradWspikyCoefficient * (sum1 + sum2));
 }

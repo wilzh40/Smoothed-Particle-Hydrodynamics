@@ -20,3 +20,4 @@
 #define ROTATION_STEP_ANGLE 1      //this is the step angle that the mesh will rotate every SOME_INTERVAL milliseconds
 void run(int argc, char** argv, const bool with_graphics = true);
 #endif //OW_WORLD_SIMULATION_H
+

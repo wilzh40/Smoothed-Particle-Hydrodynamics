@@ -23,11 +23,10 @@ extern unsigned int * gridNextNonEmptyCellBuffer;
 
 int myCompare( const void * v1, const void * v2 ); 
 
-owOpenCLSolver::owOpenCLSolver(const float * position_cpp, const float * velocity_cpp, const float * elasticConnectionsData_cpp)
+owOpenCLSolver::owOpenCLSolver(const float * positionBuffer, const float * velocityBuffer, const float * elasticConnections)
 {
 	try{
 		initializeOpenCL();
-		// Create OpenCL buffers
 		create_ocl_buffer( "acceleration", acceleration, CL_MEM_READ_WRITE, ( PARTICLE_COUNT * sizeof( float ) * 4 * 2 ) );
 		create_ocl_buffer( "gridCellIndex", gridCellIndex, CL_MEM_READ_WRITE, ( ( gridCellCount + 1 ) * sizeof( unsigned int ) * 1 ) );
 		create_ocl_buffer( "gridCellIndexFixedUp", gridCellIndexFixedUp, CL_MEM_READ_WRITE, ( ( gridCellCount + 1 ) * sizeof( unsigned int ) * 1 ) );
@@ -40,14 +39,13 @@ owOpenCLSolver::owOpenCLSolver(const float * position_cpp, const float * velocit
 		create_ocl_buffer( "sortedPosition", sortedPosition, CL_MEM_READ_WRITE, ( PARTICLE_COUNT * sizeof( float ) * 4 * 2 ) );
 		create_ocl_buffer( "sortedVelocity", sortedVelocity, CL_MEM_READ_WRITE, ( PARTICLE_COUNT * sizeof( float ) * 4 ) );
 		create_ocl_buffer( "velocity", velocity, CL_MEM_READ_WRITE, ( PARTICLE_COUNT * sizeof( float ) * 4 ) );
-		create_ocl_buffer( "muscle_activation_signal", muscle_activation_signal, CL_MEM_READ_WRITE, ( MUSCLE_COUNT * sizeof( float ) ) );
-		// Create OpenCL kernels
+		// Create kernels
 		create_ocl_kernel("clearBuffers", clearBuffers);
 		create_ocl_kernel("findNeighbors", findNeighbors);
 		create_ocl_kernel("hashParticles", hashParticles);
 		create_ocl_kernel("indexx", indexx);
 		create_ocl_kernel("sortPostPass", sortPostPass);
-		// Additional PCISPH-related kernels 
+		// Additional kernels PCISPH
 		create_ocl_kernel("pcisph_computeForcesAndInitPressure", pcisph_computeForcesAndInitPressure);
 		create_ocl_kernel("pcisph_integrate", pcisph_integrate);
 		create_ocl_kernel("pcisph_predictPositions", pcisph_predictPositions);
@@ -56,13 +54,13 @@ owOpenCLSolver::owOpenCLSolver(const float * position_cpp, const float * velocit
 		create_ocl_kernel("pcisph_computePressureForceAcceleration", pcisph_computePressureForceAcceleration);
 		create_ocl_kernel("pcisph_computeDensity", pcisph_computeDensity);
 		create_ocl_kernel("pcisph_computeElasticForces", pcisph_computeElasticForces);
-		//Copy position_cpp and velocity_cpp to the OpenCL Device
-		copy_buffer_to_device( position_cpp, position, PARTICLE_COUNT * sizeof( float ) * 4 );
-		copy_buffer_to_device( velocity_cpp, velocity, PARTICLE_COUNT * sizeof( float ) * 4 );
+		//Copy positionBuffer and velocityBuffer to the OpenCL Device
+		copy_buffer_to_device( positionBuffer, position, PARTICLE_COUNT * sizeof( float ) * 4 );
+		copy_buffer_to_device( velocityBuffer, velocity, PARTICLE_COUNT * sizeof( float ) * 4 );
 		//elastic connections
-		if(elasticConnectionsData_cpp != NULL){
+		if(elasticConnections != NULL){
 			create_ocl_buffer("elasticConnectionsData", elasticConnectionsData,CL_MEM_READ_WRITE, numOfElasticP * NEIGHBOR_COUNT * sizeof(float) * 4);
-			copy_buffer_to_device(elasticConnectionsData_cpp, elasticConnectionsData, numOfElasticP * NEIGHBOR_COUNT * sizeof(float) * 4);
+			copy_buffer_to_device(elasticConnections, elasticConnectionsData, numOfElasticP * NEIGHBOR_COUNT * sizeof(float) * 4);
 		}
 	}catch( std::exception &e ){
 		std::cout << "ERROR: " << e.what() << std::endl;
@@ -104,7 +102,7 @@ void owOpenCLSolver::initializeOpenCL()
     cl_device_type type;
 	const int device_type [] = {CL_DEVICE_TYPE_CPU,CL_DEVICE_TYPE_GPU};
 	int preferable_device_type = 0;// 0-CPU, 1-GPU
-	
+
 	unsigned int plList = 0;//selected platform index in platformList array [choose CPU by default]
 	//added autodetection of device number corresonding to preferrable device type (CPU|GPU) | otherwise the choice will be made from list of existing devices
 	cl_uint ciDeviceCount;
@@ -141,7 +139,7 @@ void owOpenCLSolver::initializeOpenCL()
 	}
 	//Print some information about chosen platform
 	int value;
-	result = devices[0].getInfo(CL_DEVICE_NAME,&cBuffer);// CL_INVALID_VALUE = -30;		
+	result = devices[0].getInfo(CL_DEVICE_NAME,&cBuffer);// CL_INVALID_VALUE = -30;
 	if(result == CL_SUCCESS) printf("CL_PLATFORM_VERSION [%d]: CL_DEVICE_NAME [%d]: \t%s\n",plList, 0, cBuffer);
 	if(strlen(cBuffer)<1000) strcpy(device_full_name,cBuffer);
 	result = devices[0].getInfo(CL_DEVICE_MAX_WORK_GROUP_SIZE,&value);
@@ -329,18 +327,18 @@ unsigned int owOpenCLSolver::_run_pcisph_computeDensity()
 	// Stage ComputeDensityPressure
 	pcisph_computeDensity.setArg( 0, neighborMap );
 	pcisph_computeDensity.setArg( 1, Wpoly6Coefficient );
-	//pcisph_computeDensity.setArg( 2, gradWspikyCoefficient );
-	pcisph_computeDensity.setArg( 2, h );
-	pcisph_computeDensity.setArg( 3, mass );
-	pcisph_computeDensity.setArg( 4, rho0 );
-	pcisph_computeDensity.setArg( 5, simulationScale );
-	pcisph_computeDensity.setArg( 6, stiffness );
-	pcisph_computeDensity.setArg( 7, sortedPosition );
-	pcisph_computeDensity.setArg( 8, pressure );
-	pcisph_computeDensity.setArg( 9, rho );
-	pcisph_computeDensity.setArg(10, particleIndexBack );
-	pcisph_computeDensity.setArg(11, delta );
-	pcisph_computeDensity.setArg(12, PARTICLE_COUNT );
+	pcisph_computeDensity.setArg( 2, gradWspikyCoefficient );
+	pcisph_computeDensity.setArg( 3, h );
+	pcisph_computeDensity.setArg( 4, mass );
+	pcisph_computeDensity.setArg( 5, rho0 );
+	pcisph_computeDensity.setArg( 6, simulationScale );
+	pcisph_computeDensity.setArg( 7, stiffness );
+	pcisph_computeDensity.setArg( 8, sortedPosition );
+	pcisph_computeDensity.setArg( 9, pressure );
+	pcisph_computeDensity.setArg(10, rho );
+	pcisph_computeDensity.setArg(11, particleIndexBack );
+	pcisph_computeDensity.setArg(12, delta );
+	pcisph_computeDensity.setArg(13, PARTICLE_COUNT );
 	int err = queue.enqueueNDRangeKernel(
 		pcisph_computeDensity, cl::NullRange, cl::NDRange( (int) ( PARTICLE_COUNT_RoundedUp ) ),
 #if defined( __APPLE__ )
@@ -366,7 +364,7 @@ unsigned int owOpenCLSolver::_run_pcisph_computeForcesAndInitPressure()
 	pcisph_computeForcesAndInitPressure.setArg( 8, del2WviscosityCoefficient );
 	pcisph_computeForcesAndInitPressure.setArg( 9, h );
 	pcisph_computeForcesAndInitPressure.setArg(10, mass );
-	pcisph_computeForcesAndInitPressure.setArg(11, viscosity );
+	pcisph_computeForcesAndInitPressure.setArg(11, mu );
 	pcisph_computeForcesAndInitPressure.setArg(12, simulationScale );
 	pcisph_computeForcesAndInitPressure.setArg(13, gravity_x );
 	pcisph_computeForcesAndInitPressure.setArg(14, gravity_y );
@@ -387,6 +385,8 @@ unsigned int owOpenCLSolver::_run_pcisph_computeForcesAndInitPressure()
 	return err;
 }
 
+extern float muscle_activation_signal;
+
 unsigned int owOpenCLSolver::_run_pcisph_computeElasticForces()
 {
 	if(numOfElasticP == 0 )
@@ -404,8 +404,7 @@ unsigned int owOpenCLSolver::_run_pcisph_computeElasticForces()
 	pcisph_computeElasticForces.setArg( 10, elasticConnectionsData );
 	pcisph_computeElasticForces.setArg( 11, numOfBoundaryP*(!generateInitialConfiguration) );
 	pcisph_computeElasticForces.setArg( 12, PARTICLE_COUNT );
-	pcisph_computeElasticForces.setArg( 13, MUSCLE_COUNT );
-	pcisph_computeElasticForces.setArg( 14, muscle_activation_signal);
+	pcisph_computeElasticForces.setArg( 13, muscle_activation_signal);
 	int numOfElasticPCountRoundedUp = ((( numOfElasticP - 1 ) / local_NDRange_size ) + 1 ) * local_NDRange_size;
 	int err = queue.enqueueNDRangeKernel(
 		pcisph_computeElasticForces, cl::NullRange, cl::NDRange( (int) ( numOfElasticPCountRoundedUp ) ),
@@ -462,17 +461,17 @@ unsigned int owOpenCLSolver::_run_pcisph_predictDensity()
 	pcisph_predictDensity.setArg( 0, neighborMap );
 	pcisph_predictDensity.setArg( 1, particleIndexBack );
 	pcisph_predictDensity.setArg( 2, Wpoly6Coefficient );
-	//pcisph_predictDensity.setArg( 3, gradWspikyCoefficient );
-	pcisph_predictDensity.setArg( 3, h );
-	pcisph_predictDensity.setArg( 4, mass );
-	pcisph_predictDensity.setArg( 5, rho0 );
-	pcisph_predictDensity.setArg( 6, simulationScale );
-	pcisph_predictDensity.setArg( 7, stiffness );
-	pcisph_predictDensity.setArg( 8, sortedPosition );
-	pcisph_predictDensity.setArg( 9, pressure );
-	pcisph_predictDensity.setArg(10, rho );
-	pcisph_predictDensity.setArg(11, delta );
-	pcisph_predictDensity.setArg(12, PARTICLE_COUNT );
+	pcisph_predictDensity.setArg( 3, gradWspikyCoefficient );
+	pcisph_predictDensity.setArg( 4, h );
+	pcisph_predictDensity.setArg( 5, mass );
+	pcisph_predictDensity.setArg( 6, rho0 );
+	pcisph_predictDensity.setArg( 7, simulationScale );
+	pcisph_predictDensity.setArg( 8, stiffness );
+	pcisph_predictDensity.setArg( 9, sortedPosition );
+	pcisph_predictDensity.setArg(10, pressure );
+	pcisph_predictDensity.setArg(11, rho );
+	pcisph_predictDensity.setArg(12, delta );
+	pcisph_predictDensity.setArg(13, PARTICLE_COUNT );
 	int err = queue.enqueueNDRangeKernel(
 		pcisph_predictDensity, cl::NullRange, cl::NDRange( (int) ( PARTICLE_COUNT_RoundedUp ) ),
 #if defined( __APPLE__ )
@@ -490,19 +489,20 @@ unsigned int owOpenCLSolver::_run_pcisph_correctPressure()
 	// Stage ComputeDensityPressure
 	pcisph_correctPressure.setArg( 0, neighborMap );
 	pcisph_correctPressure.setArg( 1, particleIndexBack );
-	//pcisph_correctPressure.setArg( 2, gradWspikyCoefficient );
-	pcisph_correctPressure.setArg( 2, h );
-	pcisph_correctPressure.setArg( 3, mass );
-	pcisph_correctPressure.setArg( 4, rho0 );
-	pcisph_correctPressure.setArg( 5, simulationScale );
-	pcisph_correctPressure.setArg( 6, stiffness );
-	pcisph_correctPressure.setArg( 7, sortedPosition );
-	pcisph_correctPressure.setArg( 8, pressure );
-	pcisph_correctPressure.setArg( 9, rho );
-	pcisph_correctPressure.setArg(10, delta );
-	pcisph_correctPressure.setArg(11, position );
-	pcisph_correctPressure.setArg(12, particleIndex );
-	pcisph_correctPressure.setArg(13, PARTICLE_COUNT );
+	pcisph_correctPressure.setArg( 2, Wpoly6Coefficient );
+	pcisph_correctPressure.setArg( 3, gradWspikyCoefficient );
+	pcisph_correctPressure.setArg( 4, h );
+	pcisph_correctPressure.setArg( 5, mass );
+	pcisph_correctPressure.setArg( 6, rho0 );
+	pcisph_correctPressure.setArg( 7, simulationScale );
+	pcisph_correctPressure.setArg( 8, stiffness );
+	pcisph_correctPressure.setArg( 9, sortedPosition );
+	pcisph_correctPressure.setArg(10, pressure );
+	pcisph_correctPressure.setArg(11, rho );
+	pcisph_correctPressure.setArg(12, delta );
+	pcisph_correctPressure.setArg(13, position );
+	pcisph_correctPressure.setArg(14, particleIndex );
+	pcisph_correctPressure.setArg(15, PARTICLE_COUNT );
 	int err = queue.enqueueNDRangeKernel(
 		pcisph_correctPressure, cl::NullRange, cl::NDRange( (int) ( PARTICLE_COUNT_RoundedUp ) ),
 #if defined( __APPLE__ )
@@ -525,17 +525,17 @@ unsigned int owOpenCLSolver::_run_pcisph_computePressureForceAcceleration()
 	pcisph_computePressureForceAcceleration.setArg( 4, sortedVelocity );
 	pcisph_computePressureForceAcceleration.setArg( 5, particleIndexBack );
 	pcisph_computePressureForceAcceleration.setArg( 6, CFLLimit );
-	//pcisph_computePressureForceAcceleration.setArg( 7, del2WviscosityCoefficient );
-	pcisph_computePressureForceAcceleration.setArg( 7, gradWspikyCoefficient );
-	pcisph_computePressureForceAcceleration.setArg( 8, h );
-	pcisph_computePressureForceAcceleration.setArg(  9, mass );
-	pcisph_computePressureForceAcceleration.setArg( 10, viscosity );
-	pcisph_computePressureForceAcceleration.setArg( 11, simulationScale );
-	pcisph_computePressureForceAcceleration.setArg( 12, acceleration );
-	pcisph_computePressureForceAcceleration.setArg( 13, rho0 );
-	pcisph_computePressureForceAcceleration.setArg( 14, position );
-	pcisph_computePressureForceAcceleration.setArg( 15, particleIndex );
-	pcisph_computePressureForceAcceleration.setArg( 16, PARTICLE_COUNT );
+	pcisph_computePressureForceAcceleration.setArg( 7, del2WviscosityCoefficient );
+	pcisph_computePressureForceAcceleration.setArg( 8, gradWspikyCoefficient );
+	pcisph_computePressureForceAcceleration.setArg( 9, h );
+	pcisph_computePressureForceAcceleration.setArg( 10, mass );
+	pcisph_computePressureForceAcceleration.setArg( 11, mu );
+	pcisph_computePressureForceAcceleration.setArg( 12, simulationScale );
+	pcisph_computePressureForceAcceleration.setArg( 13, acceleration );
+	pcisph_computePressureForceAcceleration.setArg( 14, rho0 );
+	pcisph_computePressureForceAcceleration.setArg( 15, position );
+	pcisph_computePressureForceAcceleration.setArg( 16, particleIndex );
+	pcisph_computePressureForceAcceleration.setArg( 17, PARTICLE_COUNT );
 	int err = queue.enqueueNDRangeKernel(
 		pcisph_computePressureForceAcceleration, cl::NullRange, cl::NDRange( (int) ( PARTICLE_COUNT_RoundedUp ) ),
 #if defined( __APPLE__ )
@@ -635,13 +635,6 @@ int owOpenCLSolver::copy_buffer_from_device(void *host_b, const cl::Buffer &ocl_
 	queue.finish();
 	return err;
 }
-
-unsigned int owOpenCLSolver::updateMuscleActivityData(float *_muscle_activation_signal_buffer)
-{
-	copy_buffer_to_device( _muscle_activation_signal_buffer, muscle_activation_signal, MUSCLE_COUNT * sizeof( float ) );
-	return 0;
-}
-
 owOpenCLSolver::~owOpenCLSolver(void)
 {
 	delete [] gridNextNonEmptyCellBuffer;

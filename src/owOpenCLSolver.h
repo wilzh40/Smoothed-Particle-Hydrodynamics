@@ -1,11 +1,10 @@
 #ifndef OW_OPENCL_SOLVER_H
 #define OW_OPENCL_SOLVER_H
 
-#pragma comment( lib, "opencl.lib" )							// opencl.lib
+#pragma comment( lib, "opencl.lib" )
 
 #if defined(__APPLE__) || defined(__MACOSX)
-	#include <OpenCL/cl.hpp>
-	#include <OpenCL/cl_d3d10.h>
+	#include <cl.hpp>
 #else
 	#include <CL/cl.hpp>
 #endif
@@ -14,13 +13,12 @@
 extern int PARTICLE_COUNT;
 extern int PARTICLE_COUNT_RoundedUp;
 extern int local_NDRange_size;
-extern int MUSCLE_COUNT;
 
-#define generateInitialConfiguration 1 //or load from file otherwise [0/1]
+#define generateInitialConfiguration 0 //or load from file otherwise [0/1]
 
 #if INTEL_OPENCL_DEBUG
 //#define  OPENCL_DEBUG_PROGRAM_PATH "-g -s \"C:\\Users\\Serg\\Documents\\GitHub\\Smoothed-Particle-Hydrodynamics\\src\\sphFluid.cl\"" // if you debuging with intel opencl debuger you need past here full path to you opencl program
-//#define  OPENCL_DEBUG_PROGRAM_PATH "-g -s \"C:\\Users\\Андрей\\Documents\\GitHub\\Smoothed-Particle-Hydrodynamics\\src\\sphFluid.cl\"" // if you debuging with intel opencl debuger you need past here full path to you opencl program
+//#define  OPENCL_DEBUG_PROGRAM_PATH "-g -s \"C:\\Users\\пїЅпїЅпїЅпїЅпїЅпїЅ\\Documents\\GitHub\\Smoothed-Particle-Hydrodynamics\\src\\sphFluid.cl\"" // if you debuging with intel opencl debuger you need past here full path to you opencl program
 #define  OPENCL_DEBUG_PROGRAM_PATH "-g -s \"C:\\GitHub\\Smoothed-Particle-Hydrodynamics\\src\\sphFluid.cl\"" // if you debuging with intel opencl debuger you need past here full path to you opencl program
 #endif
 #define OPENCL_PROGRAM_PATH "src/sphFluid.cl"
@@ -28,7 +26,7 @@ extern int MUSCLE_COUNT;
 class owOpenCLSolver
 {
 public:
-	owOpenCLSolver(const float * position_cpp, const float * velocity_cpp, const float * elasticConnectionsData_cpp = NULL);
+	owOpenCLSolver(const float * positionBuffer, const float * velocityBuffer, const float * elasticConnections = NULL);
 	owOpenCLSolver(void);
 	~owOpenCLSolver(void);
 	// Initialize OPENCL device, context, queue, program...
@@ -50,12 +48,12 @@ public:
 	unsigned int _run_pcisph_correctPressure();
 	unsigned int _run_pcisph_computePressureForceAcceleration();
 	unsigned int _run_pcisph_integrate();
-	//
-	unsigned int updateMuscleActivityData(float *_muscle_activation_signal_buffer);
 	
-	void read_position_buffer( float * position_cpp ) { copy_buffer_from_device( position_cpp, position, PARTICLE_COUNT * sizeof( float ) * 4 ); };
-	void read_density_buffer( float * density_cpp ) { copy_buffer_from_device( density_cpp, rho, PARTICLE_COUNT * sizeof( float ) * 1 ); }; // This need only for visualization current density of particle (graphic effect)
-	void read_particleIndex_buffer( unsigned int * particleIndexBuffer ) { copy_buffer_from_device( particleIndexBuffer, particleIndex, PARTICLE_COUNT * sizeof( unsigned int ) * 2 ); }; // This need only for visualization current density of particle (graphic effect)
+	void read_position_b( float * positionBuffer ) { copy_buffer_from_device( positionBuffer, position, PARTICLE_COUNT * sizeof( float ) * 4 ); };
+	void read_velocity_b( float * velocityBuffer ) { copy_buffer_from_device( velocityBuffer, velocity, PARTICLE_COUNT * sizeof( float ) * 4 ); };
+	void read_elastic_b( float * elasticBuffer ) { copy_buffer_from_device( elasticBuffer, velocity, PARTICLE_COUNT * sizeof( float ) * 4 ); };
+	void read_density_b( float * densityBuffer ) { copy_buffer_from_device( densityBuffer, rho, PARTICLE_COUNT * sizeof( float ) * 1 ); }; // This need only for visualization current density of particle (graphic effect)
+	void read_particleIndex_b( unsigned int * particeleIndexBuffer ) { copy_buffer_from_device( particeleIndexBuffer, particleIndex, PARTICLE_COUNT * sizeof( unsigned int ) * 2 ); }; // This need only for visualization current density of particle (graphic effect)
 private:
 	void create_ocl_kernel( const char *name, cl::Kernel &k );
 	void create_ocl_buffer(const char *name, cl::Buffer &b, const cl_mem_flags flags,const int size);
@@ -66,9 +64,6 @@ private:
 	cl::CommandQueue		  queue;
 	cl::Program				  program;
 	// Buffers
-	cl::Buffer  muscle_activation_signal;   // array storing data (activation signals) for an array of muscles. 
-											// now each can be affected by user independently
-
 	cl::Buffer 	acceleration;				// forceAcceleration and pressureForceAcceleration
 	cl::Buffer 	gridCellIndex;
 	cl::Buffer 	gridCellIndexFixedUp;

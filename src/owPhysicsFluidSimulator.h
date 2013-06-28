@@ -11,25 +11,22 @@ public:
 	owPhysicsFluidSimulator(void);
 	owPhysicsFluidSimulator(owHelper * helper);
 	~owPhysicsFluidSimulator(void);
-	float * getposition_cpp() { return position_cpp; };
-	float * getvelocity_cpp() { return velocity_cpp; };
-	float * getdensity_cpp() { ocl_solver->read_density_buffer( density_cpp ); return density_cpp; };
-	unsigned int * getparticleIndex_cpp() { ocl_solver->read_particleIndex_buffer( particleIndex_cpp ); return particleIndex_cpp; };
+	float * getPositionBuffer() { return positionBuffer; };
+	float * getVelocityBuffer() { return velocityBuffer; };
+	float * getDensityBuffer() { ocl_solver->read_density_b( densityBuffer ); return densityBuffer; };
+	unsigned int * getParticleIndexBuffer() { ocl_solver->read_particleIndex_b( particleIndexBuffer ); return particleIndexBuffer; };
 	//TODO helper functions delete after fix!!
-	float * getelasticConnectionsData_cpp() { return elasticConnectionsData_cpp; };
+	float * getElasticConnections() { return elasticConnections; };
 	double simulationStep();
-	void set_loadConfigStep(int step){ loadConfigStep = step; };
 private:
-	int loadConfigStep;
 	owOpenCLSolver * ocl_solver;
-	float * position_cpp;				// everywhere in the code %variableName%_cpp means that we create 
-	float * velocity_cpp;				// and initialize in 'ordinary' memory some data, which will be 
-	float * elasticConnectionsData_cpp; // copied later to OpenCL buffer %variableName% 
-
-	//Helper arrays
-	float * density_cpp;
-	unsigned int * particleIndex_cpp;
-	float * acceleration_cpp;//TODO REMOVE after fixing
+	float * positionBuffer;
+	float * velocityBuffer;
+	float * elasticConnections;
+	//Helper buffers
+	float * densityBuffer;
+	unsigned int * particleIndexBuffer;
+	float * accelerationBuffer;//TODO REMOVE after fixing
 	owHelper * helper;
 };
 
