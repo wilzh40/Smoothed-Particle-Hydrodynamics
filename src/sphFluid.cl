@@ -743,7 +743,7 @@ __kernel void pcisph_computeForcesAndInitPressure(
 	}while(  ++nc < NEIGHBOR_COUNT );
 	
 	accel_surfTensForce.w = 0.f;
-	float viscosity = 0.3f;
+	float viscosity = 1.f;//0.00050f;
 	sum *= mass*viscosity*del2WviscosityCoefficient/rho[id];
 
 	// apply external forces
@@ -814,7 +814,6 @@ __kernel void pcisph_computeElasticForces(
 			
 			if(r_ij!=0.f){
 				acceleration[ id ] += -(vect_r_ij/r_ij) * delta_r_ij * k;
-				
 				//contractible spring = muscle
 				if(muscle_activation_signal>0.f)
 	        		if((int)(elasticConnectionsData[idx+nc].z)==1.f)
@@ -832,6 +831,7 @@ __kernel void pcisph_computeElasticForces(
 			if((v_i_cm_length!=0)&&(r_ij!=0))
 			{
 				proj_v_i_cm_on_r_ij = vect_r_ij * DOT(velocity_i_cm,vect_r_ij)/(r_ij*r_ij);
+
 			}
 		}
 		else

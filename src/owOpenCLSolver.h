@@ -54,11 +54,12 @@ public:
 	void read_elastic_b( float * elasticBuffer ) { copy_buffer_from_device( elasticBuffer, velocity, PARTICLE_COUNT * sizeof( float ) * 4 ); };
 	void read_density_b( float * densityBuffer ) { copy_buffer_from_device( densityBuffer, rho, PARTICLE_COUNT * sizeof( float ) * 1 ); }; // This need only for visualization current density of particle (graphic effect)
 	void read_particleIndex_b( unsigned int * particeleIndexBuffer ) { copy_buffer_from_device( particeleIndexBuffer, particleIndex, PARTICLE_COUNT * sizeof( unsigned int ) * 2 ); }; // This need only for visualization current density of particle (graphic effect)
+	void write_velocity_b(float * v_b){ copy_buffer_to_device( v_b, velocity, PARTICLE_COUNT * sizeof( float ) * 4); };
 private:
-	void create_ocl_kernel( const char *name, cl::Kernel &k );
-	void create_ocl_buffer(const char *name, cl::Buffer &b, const cl_mem_flags flags,const int size);
-	int copy_buffer_to_device(const void *host_b, cl::Buffer &ocl_b,const int size);
-	int copy_buffer_from_device(void *host_b, const cl::Buffer &ocl_b, const int size );
+	void create_ocl_kernel( const char * name, cl::Kernel &k );
+	void create_ocl_buffer(const char * name, cl::Buffer &b, const cl_mem_flags flags,const int size);
+	int copy_buffer_to_device(const void * host_b, cl::Buffer &ocl_b, const int size);
+	int copy_buffer_from_device(void * host_b, const cl::Buffer &ocl_b, const int size );
 	cl::Context context;
 	std::vector< cl::Device > devices;
 	cl::CommandQueue		  queue;

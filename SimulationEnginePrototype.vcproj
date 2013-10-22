@@ -191,6 +191,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\owPhysicTests.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\src\owWorldSimulation.cpp"
 				>
 			</File>
@@ -229,6 +233,10 @@
 			</File>
 			<File
 				RelativePath=".\src\owPhysicsFluidSimulator.h"
+				>
+			</File>
+			<File
+				RelativePath=".\src\owPhysicTests.h"
 				>
 			</File>
 			<File

@@ -56,6 +56,9 @@ owPhysicsFluidSimulator::owPhysicsFluidSimulator(owHelper * helper)
 		exit( -1 );
 	}
 }
+void owPhysicsFluidSimulator::putVelocityBuffer(float * v_b){
+	ocl_solver->write_velocity_b(v_b);
+}
 double owPhysicsFluidSimulator::simulationStep()
 {
 	//PCISPH algorithm

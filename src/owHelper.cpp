@@ -104,7 +104,7 @@ void owHelper::generateConfiguration(int stage, float *position, float *velocity
 	if(stage==0)
 	{
 		numOfLiquidP = 0;
-		numOfElasticP = nEx*nEy*nEz;
+		numOfElasticP = 0;//nEx*nEy*nEz;
 		numOfBoundaryP = 0;
 
 		elasticConnections = new float[ 4 * numOfElasticP * NEIGHBOR_COUNT ];
@@ -113,68 +113,68 @@ void owHelper::generateConfiguration(int stage, float *position, float *velocity
 	//=============== create elastic particles ==================================================
 	if(stage==1)
 	{
-		p_type = ELASTIC_PARTICLE;
+		//p_type = ELASTIC_PARTICLE;
 
-		for(x=0;x<nEx;x+=1.f)
-		for(y=0;y<nEy;y+=1.f)
-		for(z=0;z<nEz;z+=1.f)
-		{
-			//write particle coordinates to corresponding arrays
-			position[ 4 * i + 0 ] = XMAX/2+x*r0-nEx*r0/2;
-			position[ 4 * i + 1 ] = YMAX/2+y*r0-nEy*r0/2 + YMAX*3/8;
-			position[ 4 * i + 2 ] = ZMAX/2+z*r0-nEz*r0/2;
-			position[ 4 * i + 3 ] = p_type;
+		//for(x=0;x<nEx;x+=1.f)
+		//for(y=0;y<nEy;y+=1.f)
+		//for(z=0;z<nEz;z+=1.f)
+		//{
+		//	//write particle coordinates to corresponding arrays
+		//	position[ 4 * i + 0 ] = XMAX/2+x*r0-nEx*r0/2;
+		//	position[ 4 * i + 1 ] = YMAX/2+y*r0-nEy*r0/2 + YMAX*3/8;
+		//	position[ 4 * i + 2 ] = ZMAX/2+z*r0-nEz*r0/2;
+		//	position[ 4 * i + 3 ] = p_type;
 
-			velocity[ 4 * i + 0 ] = 0;
-			velocity[ 4 * i + 1 ] = 0;
-			velocity[ 4 * i + 2 ] = 0;
-			velocity[ 4 * i + 3 ] = p_type;
+		//	velocity[ 4 * i + 0 ] = 0;
+		//	velocity[ 4 * i + 1 ] = 0;
+		//	velocity[ 4 * i + 2 ] = 0;
+		//	velocity[ 4 * i + 3 ] = p_type;
 
-			i++;
-		}
+		//	i++;
+		//}
 
 
-		for(int i_ec = 0; i_ec < numOfElasticP * NEIGHBOR_COUNT; i_ec++)
-		{
-			elasticConnections[ 4 * i_ec + 0 ] = NO_PARTICLE_ID;
-			elasticConnections[ 4 * i_ec + 1 ] = 0;
-			elasticConnections[ 4 * i_ec + 2 ] = 0;
-			elasticConnections[ 4 * i_ec + 3 ] = 0;
-		}
+		//for(int i_ec = 0; i_ec < numOfElasticP * NEIGHBOR_COUNT; i_ec++)
+		//{
+		//	elasticConnections[ 4 * i_ec + 0 ] = NO_PARTICLE_ID;
+		//	elasticConnections[ 4 * i_ec + 1 ] = 0;
+		//	elasticConnections[ 4 * i_ec + 2 ] = 0;
+		//	elasticConnections[ 4 * i_ec + 3 ] = 0;
+		//}
 
-		float r2ij;
-		float dx2,dy2,dz2;
+		//float r2ij;
+		//float dx2,dy2,dz2;
 
-		for(int i_ec = 0; i_ec < numOfElasticP; i_ec++)
-		{
-			ecc = 0;
-			float test, test1, test2;
+		//for(int i_ec = 0; i_ec < numOfElasticP; i_ec++)
+		//{
+		//	ecc = 0;
+		//	float test, test1, test2;
 
-			for(int j_ec = 0; j_ec < numOfElasticP; j_ec++)
-			{
-				if(i_ec!=j_ec)
-				{
-					dx2 = (position[ 4 * i_ec + 0 ] - position[ 4 * j_ec + 0 ]);
-					dy2 = (position[ 4 * i_ec + 1 ] - position[ 4 * j_ec + 1 ]);
-					dz2 = (position[ 4 * i_ec + 2 ] - position[ 4 * j_ec + 2 ]);
-					dx2 *= dx2;
-					dy2 *= dy2;
-					dz2 *= dz2;
-					r2ij = dx2 + dy2 + dz2;
+		//	for(int j_ec = 0; j_ec < numOfElasticP; j_ec++)
+		//	{
+		//		if(i_ec!=j_ec)
+		//		{
+		//			dx2 = (position[ 4 * i_ec + 0 ] - position[ 4 * j_ec + 0 ]);
+		//			dy2 = (position[ 4 * i_ec + 1 ] - position[ 4 * j_ec + 1 ]);
+		//			dz2 = (position[ 4 * i_ec + 2 ] - position[ 4 * j_ec + 2 ]);
+		//			dx2 *= dx2;
+		//			dy2 *= dy2;
+		//			dz2 *= dz2;
+		//			r2ij = dx2 + dy2 + dz2;
 
-					if(r2ij<=r0*r0*3.05f)
-					{
-						elasticConnections[ 4 * ( NEIGHBOR_COUNT * i_ec + ecc) + 0 ] = test1 = ((float)j_ec) + 0.1f;//connect elastic particles 0 and 1
-						elasticConnections[ 4 * ( NEIGHBOR_COUNT * i_ec + ecc) + 1 ] = test2 = (float)sqrt(r2ij)*simulationScale;
-						elasticConnections[ 4 * ( NEIGHBOR_COUNT * i_ec + ecc) + 2 ] = test = 0 + 1.1*((dz2>100*dx2)&&(dz2>100*dy2));
-						elasticConnections[ 4 * ( NEIGHBOR_COUNT * i_ec + ecc) + 3 ] = 0;
-						ecc++;
-					}
+		//			if(r2ij<=r0*r0*3.05f)
+		//			{
+		//				elasticConnections[ 4 * ( NEIGHBOR_COUNT * i_ec + ecc) + 0 ] = test1 = ((float)j_ec) + 0.1f;//connect elastic particles 0 and 1
+		//				elasticConnections[ 4 * ( NEIGHBOR_COUNT * i_ec + ecc) + 1 ] = test2 = (float)sqrt(r2ij)*simulationScale;
+		//				elasticConnections[ 4 * ( NEIGHBOR_COUNT * i_ec + ecc) + 2 ] = test = 0 + 1.1*((dz2>100*dx2)&&(dz2>100*dy2));
+		//				elasticConnections[ 4 * ( NEIGHBOR_COUNT * i_ec + ecc) + 3 ] = 0;
+		//				ecc++;
+		//			}
 
-					if(ecc>=NEIGHBOR_COUNT) break;
-				}
-			}
-		}
+		//			if(ecc>=NEIGHBOR_COUNT) break;
+		//		}
+		//	}
+		//}
 
 		//and connections between them
 		/*
@@ -194,9 +194,9 @@ void owHelper::generateConfiguration(int stage, float *position, float *velocity
 	//============= create volume of liquid =========================================================================
 	p_type = LIQUID_PARTICLE;
 
-	for(x = 15*r0/2;x<(XMAX-XMIN)/5 +3*r0/2;x += r0)
-	for(y =  3*r0/2;y<(YMAX-YMIN)   -3*r0/2;y += r0)
-	for(z =  3*r0/2+(ZMAX-ZMIN)*3/10;z<(ZMAX-ZMIN)*7/10-3*r0/2;z += r0)
+	for(x = 15*r0/2;x<(XMAX-XMIN)/2 +22*r0/2;x += r0)
+	for(y =  3*r0/2;y<(YMAX-YMIN)   - 3*r0/2;y += r0)
+	for(z =  3*r0/2+(ZMAX-ZMIN)*3/10;z<(ZMAX-ZMIN)*8/10-0*r0/2;z += r0)
 	{
 						// stage==0 - preliminary run
 		if(stage==1)	// stage==1 - final run
@@ -415,7 +415,7 @@ void owHelper::preLoadConfiguration()
 	try
 	{
 		PARTICLE_COUNT = 0;
-		ifstream positionFile ("./configuration/position_780.txt");
+		ifstream positionFile ("C:/Users/Serg/git/openworm/ConfigurationGenerator/configurations/position_muscle.txt");
 		int i = 0;
 		float x, y, z, p_type;
 		if( positionFile.is_open() )
@@ -473,7 +473,7 @@ void owHelper::loadConfiguration(float *position, float *velocity, float *& elas
 
 	try
 	{
-		ifstream positionFile ("./configuration/position_780.txt");
+		ifstream positionFile ("C:/Users/Serg/git/openworm/ConfigurationGenerator/configurations/position_muscle.txt");
 		int i = 0;
 		float x, y, z, p_type;
 		if( positionFile.is_open() )
@@ -502,7 +502,7 @@ void owHelper::loadConfiguration(float *position, float *velocity, float *& elas
 		}
 		else 
 			throw std::runtime_error("Could not open file position.txt");
-		ifstream velocityFile ("./configuration/velocity_780.txt");
+		ifstream velocityFile ("C:/Users/Serg/git/openworm/ConfigurationGenerator/configurations/velocity_muscle.txt");
 		i = 0;
 		if( velocityFile.is_open() )
 		{
@@ -521,7 +521,7 @@ void owHelper::loadConfiguration(float *position, float *velocity, float *& elas
 			throw std::runtime_error("Could not open file velocity.txt");
 		//TODO NEXT BLOCK WILL BE new load of elastic connections
 		if(numOfElasticP != 0){
-			ifstream elasticConectionsFile ("./configuration/connectio_test_780.txt");
+			ifstream elasticConectionsFile ("C:/Users/Serg/git/openworm/ConfigurationGenerator/configurations/connection_muscle.txt");
 			elasticConnections = new float[ 4 * numOfElasticP * NEIGHBOR_COUNT ];
 			/*int numElasticConnections = 0;
 			for(i=0;i<numOfElasticP * NEIGHBOR_COUNT;i++)
@@ -536,9 +536,9 @@ void owHelper::loadConfiguration(float *position, float *velocity, float *& elas
 
 				while( elasticConectionsFile.good())
 				{
-					jd = -10;
+					jd = -10.0f;
 					elasticConectionsFile >> jd >> rij0 >> val1 >> val2;
-					if(jd>=-1)
+					if(jd>=-1.0f)
 					{
 						elasticConnections[ 4 * i + 0 ] = jd;
 						elasticConnections[ 4 * i + 1 ] = rij0;

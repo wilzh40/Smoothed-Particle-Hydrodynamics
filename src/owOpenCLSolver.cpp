@@ -402,7 +402,7 @@ unsigned int owOpenCLSolver::_run_pcisph_computeElasticForces()
 	pcisph_computeElasticForces.setArg( 8, simulationScale );
 	pcisph_computeElasticForces.setArg( 9, numOfElasticP );
 	pcisph_computeElasticForces.setArg( 10, elasticConnectionsData );
-	pcisph_computeElasticForces.setArg( 11, numOfBoundaryP*(!generateInitialConfiguration) );
+	pcisph_computeElasticForces.setArg( 11, 0 );
 	pcisph_computeElasticForces.setArg( 12, PARTICLE_COUNT );
 	pcisph_computeElasticForces.setArg( 13, muscle_activation_signal);
 	int numOfElasticPCountRoundedUp = ((( numOfElasticP - 1 ) / local_NDRange_size ) + 1 ) * local_NDRange_size;

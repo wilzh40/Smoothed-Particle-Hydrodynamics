@@ -11,9 +11,10 @@ public:
 	owPhysicsFluidSimulator(void);
 	owPhysicsFluidSimulator(owHelper * helper);
 	~owPhysicsFluidSimulator(void);
-	float * getPositionBuffer() { return positionBuffer; };
-	float * getVelocityBuffer() { return velocityBuffer; };
+	float * getPositionBuffer() {  return positionBuffer; };
+	float * getVelocityBuffer() { ocl_solver->read_velocity_b( velocityBuffer ) ; return velocityBuffer; };
 	float * getDensityBuffer() { ocl_solver->read_density_b( densityBuffer ); return densityBuffer; };
+	void putVelocityBuffer(float * v_b);
 	unsigned int * getParticleIndexBuffer() { ocl_solver->read_particleIndex_b( particleIndexBuffer ); return particleIndexBuffer; };
 	//TODO helper functions delete after fix!!
 	float * getElasticConnections() { return elasticConnections; };

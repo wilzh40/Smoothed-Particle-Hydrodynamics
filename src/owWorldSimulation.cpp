@@ -1,4 +1,6 @@
 #include "owWorldSimulation.h"
+#include "owPhysicsFluidSimulator.h"
+#include "VectorMath.h"
 #include <stdio.h>
 
 extern int numOfLiquidP;
@@ -33,6 +35,7 @@ unsigned int * p_indexb;
 float * d_b;
 float * p_b;
 float * e_c;
+float * v_b;
 void calculateFPS();
 owPhysicsFluidSimulator * fluid_simulation;
 owHelper * helper;
@@ -40,6 +43,25 @@ int local_NDRange_size = 256;//256;
 
 float muscle_activation_signal = 0.f;
 
+//==============TESTED INFO=================
+
+extern const int tested_id;
+
+//===============================
+void zero_vel_buff(){
+	float * v_b = fluid_simulation->getVelocityBuffer();
+	for(int i = 0; i < PARTICLE_COUNT; i++){
+		if(int(v_b[4 * i + 3]) != BOUNDARY_PARTICLE){
+			v_b[4 * i + 0] = 0.f;
+			v_b[4 * i + 1] = 0.f;
+			v_b[4 * i + 2] = 0.f;
+			v_b[4 * i + 3] = v_b[4 * i + 3];
+		}
+	}
+	fluid_simulation->putVelocityBuffer(v_b);
+	//delete v_b;
+}
+bool need = true;
 void display(void)
 {
 	helper->refreshTime();
@@ -47,7 +69,6 @@ void display(void)
 	Vector3D vcenter(0,0,0);
 	Vector3D vbox[8];
 
-	int j;
 	//       [7]----[6]
 	//      / |     /| 
 	//    [3]----[2] | 
@@ -135,10 +156,30 @@ void display(void)
 		p_indexb[2*pib + 0] = i;
 	}
 	glPointSize(3.f);
-	glBegin(GL_POINTS);
+	//glBegin(GL_POINTS);
 	p_b = fluid_simulation->getPositionBuffer();
 	d_b = fluid_simulation->getDensityBuffer();
+	v_b = fluid_simulation->getVelocityBuffer();
 	float dc, rho;
+	int id = 0;
+	if(need){
+		float * zero_position = new float[4];
+		float * zero_velocity = new float[4];
+		
+		zero_position[0] = p_b[ id * 4 + 0 ];
+		zero_position[1] = p_b[ id * 4 + 1 ];
+		zero_position[2] = p_b[ id * 4 + 2 ];
+		zero_position[3] = p_b[ id * 4 + 3 ];
+		zero_velocity[0] = v_b[ id * 4 + 0 ];
+		zero_velocity[1] = v_b[ id * 4 + 1 ];
+		zero_velocity[2] = v_b[ id * 4 + 2 ];
+		zero_velocity[3] = v_b[ id * 4 + 3 ];
+		if(zero_velocity[1] > 0.f){
+//			std::cout <<"velocity:" << zero_velocity[0] << "\t" << zero_velocity[1] << "\t" << zero_velocity[2] << "\t" << std::endl;
+			zero_vel_buff();
+			need = false;
+		}
+	}
 	for(int i = 0; i<PARTICLE_COUNT; i++)
 	{
 		rho = d_b[ p_indexb[ i * 2 + 0 ] ];
@@ -156,30 +197,48 @@ void display(void)
 		if((int)p_b[i*4 + 3] != BOUNDARY_PARTICLE /*&& (int)p_b[i*4 + 3] != ELASTIC_PARTICLE*/){
 			glBegin(GL_POINTS);
 			if((int)p_b[i*4+3]==2) glColor4f(   1,   1,   0,  1.0f);
+			if( i == id){
+				glColor4f(   1,   0,   0,  1.0f);
+				glVertex3f( (p_b[i*4]-XMAX/2)*sc , (p_b[i*4+1]-YMAX/2)*sc, (p_b[i*4+2]-ZMAX/2)*sc );
+			}
+			//glVertex3f( (p_b[i*4])*sc , (p_b[i*4+1])*sc, (p_b[i*4+2])*sc );
+			glEnd();
+			if( 1){
+				glBegin(GL_LINES);
+					glVertex3f( (p_b[i*4]-XMAX/2)*sc , (p_b[i*4+1]-YMAX/2)*sc, (p_b[i*4+2]-ZMAX/2)*sc );
+					glVertex3f( (p_b[i*4] + v_b[i*4]-XMAX/2)*sc , (p_b[i*4 + 1] + v_b[i*4 + 1]-YMAX/2)*sc, (p_b[i*4 + 2] + v_b[i*4 + 2]-ZMAX/2)*sc );
+				glEnd();
+			}
+		}
+		else{
+			glBegin(GL_LINES);
+			//glVertex3f( (p_b[i*4])*sc , (p_b[i*4+1])*sc, (p_b[i*4+2])*sc );
+			//glVertex3f( (p_b[i*4] + v_b[i*4])*sc , (p_b[i*4 + 1] + v_b[i*4 + 1])*sc, (p_b[i*4 + 2] + v_b[i*4 + 2])*sc );
 			glVertex3f( (p_b[i*4]-XMAX/2)*sc , (p_b[i*4+1]-YMAX/2)*sc, (p_b[i*4+2]-ZMAX/2)*sc );
+			glVertex3f( (p_b[i*4] + v_b[i*4]-XMAX/2)*sc , (p_b[i*4 + 1] + v_b[i*4 + 1]-YMAX/2)*sc, (p_b[i*4 + 2] + v_b[i*4 + 2]-ZMAX/2)*sc );
 			glEnd();
 		}
 	}
 	e_c = fluid_simulation->getElasticConnections();
 	
 	//if(generateInitialConfiguration)
-	for(int i, i_ec=0; i_ec < numOfElasticP * NEIGHBOR_COUNT; i_ec++)
+	/*for(int i, i_ec=0; i_ec < numOfElasticP * NEIGHBOR_COUNT; i_ec++)
 	{
 		//offset = 0
 		if((j=e_c[ 4 * i_ec + 0 ])>=0)
 		{
 			i = (i_ec / NEIGHBOR_COUNT); //+ (generateInitialConfiguration!=1)*numOfBoundaryP;
 
-			glColor4b(255/2, 125/2, 0, 100/2/*alpha*/);
-			if(e_c[ 4 * i_ec + 2 ]>1.f) glColor4b(255/2, 0, 0, 255/2/*alpha*/);
+			glColor4b(255/2, 125/2, 0, 100/2);
+			if(e_c[ 4 * i_ec + 2 ]>1.f) glColor4b(255/2, 0, 0, 255/2);
 			
 			glBegin(GL_LINES);
 			glVertex3f( (p_b[i*4]-XMAX/2)*sc , (p_b[i*4+1]-YMAX/2)*sc, (p_b[i*4+2]-ZMAX/2)*sc );
 			glVertex3f( (p_b[j*4]-XMAX/2)*sc , (p_b[j*4+1]-YMAX/2)*sc, (p_b[j*4+2]-ZMAX/2)*sc );
 			glEnd();
 		}
-	}
-	glEnd();
+	}*/
+	//glEnd();
 	glutSwapBuffers();
 	helper->watch_report("graphics: \t\t%9.3f ms\n====================================\n");
 	renderTime = helper->get_elapsedTime();
@@ -217,12 +276,12 @@ void respond_mouse(int button, int state, int x, int y)
 	old_y=y;
 	if (button == 3)// mouse wheel up
     {
-        sc *= 1.1;// Zoom in
+        sc *= 1.1f;// Zoom in
     }
     else
 	if (button == 4)// mouse wheel down
     {
-        sc /= 1.1;// Zoom out
+        sc /= 1.1f;// Zoom out
     }
 }
 
@@ -317,7 +376,7 @@ void subMenuDisplay()
 	glRasterPos2f (0.01F, 0.75F); 
 	drawStringBig (label); 
 	glColor3f (1.0F, 1.0F, 1.0F); 
-	sprintf(label,"Selected device: %s     FPS = %.2f, time step: %d", device_full_name, fps, iterationCount); 
+	sprintf(label,"Selected device: %s     FPS = %.2f, time left: %d", device_full_name, fps, iterationCount * timeStep); 
 	glRasterPos2f (0.01F, 0.40F); 
 	drawStringBig (label); 
 
