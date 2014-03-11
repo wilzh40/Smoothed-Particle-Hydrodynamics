@@ -415,7 +415,7 @@ void owHelper::preLoadConfiguration()
 	try
 	{
 		PARTICLE_COUNT = 0;
-		ifstream positionFile ("C:/Users/Serg/git/openworm/ConfigurationGenerator/configurations/position_muscle.txt");
+		ifstream positionFile ("/home/serg/git/ConfigurationGenerator/configurations/position.txt");
 		int i = 0;
 		float x, y, z, p_type;
 		if( positionFile.is_open() )
@@ -473,7 +473,7 @@ void owHelper::loadConfiguration(float *position, float *velocity, float *& elas
 
 	try
 	{
-		ifstream positionFile ("C:/Users/Serg/git/openworm/ConfigurationGenerator/configurations/position_muscle.txt");
+		ifstream positionFile ("/home/serg/git/ConfigurationGenerator/configurations/position.txt");
 		int i = 0;
 		float x, y, z, p_type;
 		if( positionFile.is_open() )
@@ -502,7 +502,7 @@ void owHelper::loadConfiguration(float *position, float *velocity, float *& elas
 		}
 		else 
 			throw std::runtime_error("Could not open file position.txt");
-		ifstream velocityFile ("C:/Users/Serg/git/openworm/ConfigurationGenerator/configurations/velocity_muscle.txt");
+		ifstream velocityFile ("/home/serg/git/ConfigurationGenerator/configurations/velocity.txt");
 		i = 0;
 		if( velocityFile.is_open() )
 		{
@@ -521,7 +521,7 @@ void owHelper::loadConfiguration(float *position, float *velocity, float *& elas
 			throw std::runtime_error("Could not open file velocity.txt");
 		//TODO NEXT BLOCK WILL BE new load of elastic connections
 		if(numOfElasticP != 0){
-			ifstream elasticConectionsFile ("C:/Users/Serg/git/openworm/ConfigurationGenerator/configurations/connection_muscle.txt");
+			ifstream elasticConectionsFile ("/home/serg/git/ConfigurationGenerator/configurations/connection.txt");
 			elasticConnections = new float[ 4 * numOfElasticP * NEIGHBOR_COUNT ];
 			/*int numElasticConnections = 0;
 			for(i=0;i<numOfElasticP * NEIGHBOR_COUNT;i++)

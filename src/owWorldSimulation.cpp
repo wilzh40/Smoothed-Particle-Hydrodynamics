@@ -55,7 +55,7 @@ void zero_vel_buff(){
 			v_b[4 * i + 0] = 0.f;
 			v_b[4 * i + 1] = 0.f;
 			v_b[4 * i + 2] = 0.f;
-			v_b[4 * i + 3] = v_b[4 * i + 3];
+			//v_b[4 * i + 3] = v_b[4 * i + 3];
 		}
 	}
 	fluid_simulation->putVelocityBuffer(v_b);
@@ -162,9 +162,9 @@ void display(void)
 	v_b = fluid_simulation->getVelocityBuffer();
 	float dc, rho;
 	int id = 0;
-	if(need){
+	/*if(need){
 		float * zero_position = new float[4];
-		float * zero_velocity = new float[4];
+		float * zero_velocity_muscle = new float[4];
 		
 		zero_position[0] = p_b[ id * 4 + 0 ];
 		zero_position[1] = p_b[ id * 4 + 1 ];
@@ -179,7 +179,7 @@ void display(void)
 			zero_vel_buff();
 			need = false;
 		}
-	}
+	}*/
 	for(int i = 0; i<PARTICLE_COUNT; i++)
 	{
 		rho = d_b[ p_indexb[ i * 2 + 0 ] ];
@@ -197,26 +197,26 @@ void display(void)
 		if((int)p_b[i*4 + 3] != BOUNDARY_PARTICLE /*&& (int)p_b[i*4 + 3] != ELASTIC_PARTICLE*/){
 			glBegin(GL_POINTS);
 			if((int)p_b[i*4+3]==2) glColor4f(   1,   1,   0,  1.0f);
-			if( i == id){
-				glColor4f(   1,   0,   0,  1.0f);
+			/*if( i == id){
+				glColor4f(   1,   0,   0,  1.0f);*/
 				glVertex3f( (p_b[i*4]-XMAX/2)*sc , (p_b[i*4+1]-YMAX/2)*sc, (p_b[i*4+2]-ZMAX/2)*sc );
-			}
+			//}
 			//glVertex3f( (p_b[i*4])*sc , (p_b[i*4+1])*sc, (p_b[i*4+2])*sc );
 			glEnd();
-			if( 1){
+			/*if( 1){
 				glBegin(GL_LINES);
 					glVertex3f( (p_b[i*4]-XMAX/2)*sc , (p_b[i*4+1]-YMAX/2)*sc, (p_b[i*4+2]-ZMAX/2)*sc );
 					glVertex3f( (p_b[i*4] + v_b[i*4]-XMAX/2)*sc , (p_b[i*4 + 1] + v_b[i*4 + 1]-YMAX/2)*sc, (p_b[i*4 + 2] + v_b[i*4 + 2]-ZMAX/2)*sc );
 				glEnd();
-			}
+			}*/
 		}
 		else{
-			glBegin(GL_LINES);
+			/*glBegin(GL_LINES);
 			//glVertex3f( (p_b[i*4])*sc , (p_b[i*4+1])*sc, (p_b[i*4+2])*sc );
 			//glVertex3f( (p_b[i*4] + v_b[i*4])*sc , (p_b[i*4 + 1] + v_b[i*4 + 1])*sc, (p_b[i*4 + 2] + v_b[i*4 + 2])*sc );
 			glVertex3f( (p_b[i*4]-XMAX/2)*sc , (p_b[i*4+1]-YMAX/2)*sc, (p_b[i*4+2]-ZMAX/2)*sc );
 			glVertex3f( (p_b[i*4] + v_b[i*4]-XMAX/2)*sc , (p_b[i*4 + 1] + v_b[i*4 + 1]-YMAX/2)*sc, (p_b[i*4 + 2] + v_b[i*4 + 2]-ZMAX/2)*sc );
-			glEnd();
+			glEnd();*/
 		}
 	}
 	e_c = fluid_simulation->getElasticConnections();
