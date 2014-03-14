@@ -24,6 +24,7 @@ int winIdMain;
 int winIdSub;
 int PARTICLE_COUNT = 0;
 int PARTICLE_COUNT_RoundedUp = 0;
+int MUSCLE_COUNT = 100;//increase this value and modify corresponding code if you plan to add more than 10 muscles
 double totalTime = 0;
 int frames_counter = 0;
 double calculationTime;
@@ -41,7 +42,7 @@ owPhysicsFluidSimulator * fluid_simulation;
 owHelper * helper;
 int local_NDRange_size = 256;//256;
 
-float muscle_activation_signal = 0.f;
+float * muscle_activation_signal_cpp;
 
 //==============TESTED INFO=================
 
@@ -328,11 +329,11 @@ void mouse_motion (int x, int y)
 
 void respond_key_pressed(unsigned char key, int x, int y)
 {
-	if(key=='a')
+	/*if(key=='a')
 	{
 		muscle_activation_signal += 0.1f;
 		if(muscle_activation_signal>1.f) muscle_activation_signal = 1.f;
-	}
+	}*/
 
 	return;
 }
@@ -380,9 +381,9 @@ void subMenuDisplay()
 	glRasterPos2f (0.01F, 0.40F); 
 	drawStringBig (label); 
 
-	sprintf(label,"Muscle activation signal: %.3f (press 'a' to activate)", muscle_activation_signal); 
-	glRasterPos2f (0.01F, 0.05F); 
-	drawStringBig (label); 
+	//sprintf(label,"Muscle activation signal: %.3f (press 'a' to activate)", muscle_activation_signal);
+	//glRasterPos2f (0.01F, 0.05F);
+	//drawStringBig (label);
 
 	glutSwapBuffers (); 
 } 

@@ -14,7 +14,7 @@ extern int numOfBoundaryP = 0;
 int * _particleIndex;
 unsigned int * gridNextNonEmptyCellBuffer;
 extern int gridCellCount;
-extern float muscle_activation_signal;
+extern float * muscle_activation_signal_cpp;
 
 owPhysicsFluidSimulator::owPhysicsFluidSimulator(owHelper * helper)
 {
@@ -33,7 +33,11 @@ owPhysicsFluidSimulator::owPhysicsFluidSimulator(owHelper * helper)
 		velocityBuffer = new float[ 4 * PARTICLE_COUNT ];
 		_particleIndex = new   int[ 2 * PARTICLE_COUNT ];
 		gridNextNonEmptyCellBuffer = new unsigned int[gridCellCount+1];
-
+		muscle_activation_signal_cpp = new float [MUSCLE_COUNT];
+		for(int i=0;i<MUSCLE_COUNT;i++)
+		{
+			muscle_activation_signal_cpp[i] = 0.f;
+		}
 		//The buffers listed below are only for usability and debug
 		densityBuffer = new float[ 1 * PARTICLE_COUNT ];
 		particleIndexBuffer = new unsigned int[PARTICLE_COUNT * 2];
@@ -84,7 +88,7 @@ double owPhysicsFluidSimulator::simulationStep()
 		float * elastic_connections_to_log = this->getElasticConnections();
 		std::ostringstream connFile;
 		connFile << "elastic_log_" << iterationCount << ".txt";
-		this->helper->log_bufferf(elastic_connections_to_log, 4, numOfElasticP * NEIGHBOR_COUNT, connFile.str().c_str());
+		this->helper->log_bufferf(elastic_connections_to_log, 4, numOfElasticP * MAX_NEIGHBOR_COUNT, connFile.str().c_str());
 	}
 
 	helper->refreshTime();
@@ -109,14 +113,13 @@ double owPhysicsFluidSimulator::simulationStep()
 			ocl_solver->_run_pcisph_computePressureForceAcceleration();
 			iter++;
 		}while( iter < maxIteration );
-		ocl_solver->_run_pcisph_integrate();						helper->watch_report("_runPCISPH: \t\t%9.3f ms\t3 iteration(s)\n");
+		ocl_solver->_run_pcisph_integrate(iterationCount);						helper->watch_report("_runPCISPH: \t\t%9.3f ms\t3 iteration(s)\n");
 		ocl_solver->read_position_b(positionBuffer);				helper->watch_report("_readBuffer: \t\t%9.3f ms\n"); 
 		//END PCISPH algorithm
 		printf("------------------------------------\n");
 		printf("_Total_step_time:\t%9.3f ms\n",helper->get_elapsedTime());
 		printf("------------------------------------\n");
 		iterationCount++;
-		muscle_activation_signal *= 0.9f;
 		return helper->get_elapsedTime();
 	}catch(std::exception &e){
 		std::cout << "ERROR: " << e.what() << std::endl;
@@ -131,6 +134,7 @@ owPhysicsFluidSimulator::~owPhysicsFluidSimulator(void)
 	delete [] velocityBuffer;
 	delete [] densityBuffer;
 	delete [] particleIndexBuffer;
+	delete [] muscle_activation_signal_cpp;
 	ocl_solver->~owOpenCLSolver();
 }
 
@@ -142,7 +146,7 @@ float calcDelta()
     float sum1_x = 0.f;
 	float sum1_y = 0.f;
 	float sum1_z = 0.f;
-    float sum1 = 0.f, sum2 = 0.f;
+    double sum1 = 0.0, sum2 = 0.0;
 	float v_x = 0.f;
 	float v_y = 0.f;
 	float v_z = 0.f;
@@ -158,7 +162,7 @@ float calcDelta()
 
         dist = sqrt(v_x*v_x+v_y*v_y+v_z*v_z);//scaled, right?
 
-        if (dist <= h)
+        if (dist <= h*simulationScale)
         {
 			h_r_2 = pow((h*simulationScale - dist),2);//scaled
 
@@ -170,5 +174,7 @@ float calcDelta()
         }
     }
 	sum1 = sum1_x*sum1_x + sum1_y*sum1_y + sum1_z*sum1_z;
-	return  1.0f / (beta * gradWspikyCoefficient * gradWspikyCoefficient * (sum1 + sum2));
+	double result = 1.0 / (beta * gradWspikyCoefficient * gradWspikyCoefficient * (sum1 + sum2));
+	//return  1.0f / (beta * gradWspikyCoefficient * gradWspikyCoefficient * (sum1 + sum2));
+	return (float)result;
 }

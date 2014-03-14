@@ -107,7 +107,7 @@ void owHelper::generateConfiguration(int stage, float *position, float *velocity
 		numOfElasticP = 0;//nEx*nEy*nEz;
 		numOfBoundaryP = 0;
 
-		elasticConnections = new float[ 4 * numOfElasticP * NEIGHBOR_COUNT ];
+		elasticConnections = new float[ 4 * numOfElasticP * MAX_NEIGHBOR_COUNT ];
 	}
 
 	//=============== create elastic particles ==================================================
@@ -404,7 +404,7 @@ void owHelper::generateConfiguration(int stage, float *position, float *velocity
 			printf("\nWarning! Preliminary [%d] and final [%d] particle count are different\n",PARTICLE_COUNT,i);
 			exit(-4);
 		}
-		loadConfigToFile(position,velocity,elasticConnections,NEIGHBOR_COUNT*numOfElasticP);
+		loadConfigToFile(position,velocity,elasticConnections,MAX_NEIGHBOR_COUNT*numOfElasticP);
 	}
 
 	return;
@@ -522,7 +522,7 @@ void owHelper::loadConfiguration(float *position, float *velocity, float *& elas
 		//TODO NEXT BLOCK WILL BE new load of elastic connections
 		if(numOfElasticP != 0){
 			ifstream elasticConectionsFile ("/home/serg/git/ConfigurationGenerator/configurations/connection.txt");
-			elasticConnections = new float[ 4 * numOfElasticP * NEIGHBOR_COUNT ];
+			elasticConnections = new float[ 4 * numOfElasticP * MAX_NEIGHBOR_COUNT ];
 			/*int numElasticConnections = 0;
 			for(i=0;i<numOfElasticP * NEIGHBOR_COUNT;i++)
 			{
