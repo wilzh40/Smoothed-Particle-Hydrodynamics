@@ -21,11 +21,11 @@ const float stiffness = 0.75f;
 const float h = 3.34f;
 const float hashGridCellSize = 2.0f * h;
 const float hashGridCellSizeInv = 1.0f / hashGridCellSize;
-const float mass = 0.0003f;//0.0003
+const float mass = 0.0003f;//3.25e-14f;
 const float simulationScale = 0.004f*pow(mass,1.f/3.f)/pow(0.00025f,1.f/3.f);
 const float simulationScaleInv = 1.0f / simulationScale;
-const float mu = 4.0f;//why this value? Dynamic viscosity of water at 25 C = 0.89e-3 Pa*s
-const float timeStep = 0.001f;//0.0005f;//0.0042f;// ATTENTION you should remember about time step: if it is larger 0.001 it can lead to 'explosion' of elastic matter objects
+const float mu = 1.f;//0.00005f;//4.0f;//why this value? Dynamic viscosity of water at 25 C = 0.89e-3 Pa*s
+const float timeStep = 0.001f;//5.0e-06f;//0.0005f;//0.0042f;// ATTENTION you should remember about time step: if it is larger 0.001 it can lead to 'explosion' of elastic matter objects
 const float CFLLimit = 100.0f;
 const float damping = 0.75f;
 const float r0 = 0.5f * h; // distance between two boundary particle
@@ -42,7 +42,7 @@ const float gravity_z = 0.0f;
 extern const float delta;
 const int maxIteration = 3;
 const int ELASTIC_CONNECTIONS_COUNT = 0;
-const float surfTensCoeff = -0.0013f;
-const float elasticityCoeff = 10000.0f * mass;
+const float surfTensCoeff = -0.0013f;//-4.5e-10f;
+const float elasticityCoeff = 1.95e-05f;//10000.0f * mass;
 
 #endif // #ifndef OW_PHYSICS_CONSTANT_H

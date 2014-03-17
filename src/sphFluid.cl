@@ -953,7 +953,7 @@ __kernel void pcisph_predictDensity(
 			if(r_ij2==0)
 			{
 				//printf("\a\n");
-				printf("@@@|>>[%d]-[%d]<<|@@@ %E @@@@ (%f) (%f) ####",id,jd,((double)r_ij2),sortedPosition[PARTICLE_COUNT+id].w,sortedPosition[PARTICLE_COUNT+jd].w );
+				//printf("@@@|>>[%d]-[%d]<<|@@@ %E @@@@ (%f) (%f) ####",id,jd,((double)r_ij2),sortedPosition[PARTICLE_COUNT+id].w,sortedPosition[PARTICLE_COUNT+jd].w );
 			}
 		}
 
@@ -1084,9 +1084,9 @@ __kernel void pcisph_computePressureForceAcceleration(
 
 				if(r_ij==0.0f) 
 				{
-					printf("\n> Error!: r_ij: %f ",r_ij);
-					printf("\n> sortedPosition[%d]	: %f , %f , %f ",id,sortedPosition[id].x,sortedPosition[id].y,sortedPosition[id].z);
-					printf("\n> sortedPosition[%d]	: %f , %f , %f ",jd,sortedPosition[jd].x,sortedPosition[jd].y,sortedPosition[jd].z);
+					//printf("\n> Error!: r_ij: %f ",r_ij);
+					//printf("\n> sortedPosition[%d]	: %f , %f , %f ",id,sortedPosition[id].x,sortedPosition[id].y,sortedPosition[id].z);
+					//printf("\n> sortedPosition[%d]	: %f , %f , %f ",jd,sortedPosition[jd].x,sortedPosition[jd].y,sortedPosition[jd].z);
 				}
 				result += value*vr_ij/r_ij;
 				//result = result;
@@ -1206,13 +1206,13 @@ float4 calculateProjectionOfPointToPlane(float4 ps, float4 pa, float4 pb, float4
                 pm.z = calcDeterminant3x3(a_1,a_2,b  )/denominator;
         }
         else {
-                printf("\ndenominator equal to zero\n");        
+                //printf("\ndenominator equal to zero\n");        
                 pm.w = -1;//indicates error 
-				printf("%f\t%f\t%f\n",a_1_1, a_1_2, a_1_3);
-				printf("%f\t%f\t%f\n",a_2_1, a_2_2, a_2_3);
-				printf("%f\t%f\t%f\n",a_3_1, a_3_2, a_3_3);
-				printf("\n{{%f,%f,%f},{%f,%f,%f},{%f,%f,%f}}\n", a_1.x, a_1.y, a_1.z, a_2.x, a_2.y, a_2.z,a_3.x, a_3.y, a_3.z);
-				printf("\n");       
+				//printf("%f\t%f\t%f\n",a_1_1, a_1_2, a_1_3);
+				//printf("%f\t%f\t%f\n",a_2_1, a_2_2, a_2_3);
+				//printf("%f\t%f\t%f\n",a_3_1, a_3_2, a_3_3);
+				//printf("\n{{%f,%f,%f},{%f,%f,%f},{%f,%f,%f}}\n", a_1.x, a_1.y, a_1.z, a_2.x, a_2.y, a_2.z,a_3.x, a_3.y, a_3.z);
+				//printf("\n");       
         }
 
         //printf("\npa=(%f,%f,%f)",pa.x,pa.y,pa.z);
@@ -1337,8 +1337,8 @@ __kernel void computeInteractionWithMembranes(
 
 						if(pos_p.w==-1)
 						{
-							printf("calculateProjectionOfPointToPlane() returned error");
-							printf("\n membran ID: %d\n",mdi + 1);
+							//printf("calculateProjectionOfPointToPlane() returned error");
+							//printf("\n membran ID: %d\n",mdi + 1);
 							return;
 						}
 
@@ -1371,7 +1371,7 @@ __kernel void computeInteractionWithMembranes(
 						}
 						else
 						{
-							printf("computeInteractionWithMembranes error #001");
+							//printf("computeInteractionWithMembranes error #001");
 							return;
 						}
 
