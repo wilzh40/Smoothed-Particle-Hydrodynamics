@@ -410,12 +410,15 @@ void owHelper::generateConfiguration(int stage, float *position, float *velocity
 	return;
 }
 
+std::string path = "/home/serg/git/ConfigurationGenerator/configurations/SiberneticTestingConfigs/";
+std::string prefix = "single_particle_gravity_test_";
 void owHelper::preLoadConfiguration()
 {
 	try
 	{
 		PARTICLE_COUNT = 0;
-		ifstream positionFile ("/home/serg/git/ConfigurationGenerator/configurations/position.txt");
+		std::string position_file_name = path + prefix + "position.txt";
+		ifstream positionFile (position_file_name.c_str());
 		int i = 0;
 		float x, y, z, p_type;
 		if( positionFile.is_open() )
@@ -473,7 +476,8 @@ void owHelper::loadConfiguration(float *position, float *velocity, float *& elas
 
 	try
 	{
-		ifstream positionFile ("/home/serg/git/ConfigurationGenerator/configurations/position.txt");
+		std::string position_file_name = path + prefix + "position.txt";
+		ifstream positionFile (position_file_name.c_str());
 		int i = 0;
 		float x, y, z, p_type;
 		if( positionFile.is_open() )
@@ -502,7 +506,8 @@ void owHelper::loadConfiguration(float *position, float *velocity, float *& elas
 		}
 		else 
 			throw std::runtime_error("Could not open file position.txt");
-		ifstream velocityFile ("/home/serg/git/ConfigurationGenerator/configurations/velocity.txt");
+		std::string velocity_file_name = path + prefix + "velocity.txt";
+		ifstream velocityFile (velocity_file_name.c_str());
 		i = 0;
 		if( velocityFile.is_open() )
 		{
@@ -521,7 +526,8 @@ void owHelper::loadConfiguration(float *position, float *velocity, float *& elas
 			throw std::runtime_error("Could not open file velocity.txt");
 		//TODO NEXT BLOCK WILL BE new load of elastic connections
 		if(numOfElasticP != 0){
-			ifstream elasticConectionsFile ("/home/serg/git/ConfigurationGenerator/configurations/connection.txt");
+			std::string connection_file_name = path + prefix + "connection.txt";
+			ifstream elasticConectionsFile (connection_file_name.c_str());
 			elasticConnections = new float[ 4 * numOfElasticP * MAX_NEIGHBOR_COUNT ];
 			/*int numElasticConnections = 0;
 			for(i=0;i<numOfElasticP * NEIGHBOR_COUNT;i++)

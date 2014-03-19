@@ -43,6 +43,6 @@ extern const float delta;
 const int maxIteration = 3;
 const int ELASTIC_CONNECTIONS_COUNT = 0;
 const float surfTensCoeff = -0.0013f;//-4.5e-10f;
-const float elasticityCoeff = 1.95e-05f;//10000.0f * mass;
+const float elasticityCoeff = 10000.0f * mass;//1.95e-05f;
 
 #endif // #ifndef OW_PHYSICS_CONSTANT_H

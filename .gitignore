@@ -23,3 +23,10 @@
 *.obj
 *.pdb
 *.res
+*.project~
+*.cproject~
+core
+*.pyc
+*.cl~
+*.py~
+

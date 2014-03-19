@@ -869,25 +869,28 @@ __kernel void pcisph_predictPositions(
 	if( id >= PARTICLE_COUNT ) return;
 	id = particleIndexBack[id];
 	int id_source_particle = PI_SERIAL_ID( particleIndex[id] );
-	float4 position_ = sortedPosition[ id ];
+	float4 position_t = sortedPosition[ id ];
 	if((int)(position[ id_source_particle ].w) == 3){//stationary (boundary) particles, right?
-		sortedPosition[PARTICLE_COUNT+id] = position_;//this line was missing (absent) and this fact caused serions errors in program behavior
+		sortedPosition[PARTICLE_COUNT+id] = position_t;//this line was missing (absent) and this fact caused serions errors in program behavior
 		return;
 	}
 	//                     pressure force (dominant)            + all other forces  
+	float4 acceleration_t    = acceleration[ PARTICLE_COUNT*2+id_source_particle ];    acceleration_t.w    = 0.f;
+	float4 acceleration_t_dt = acceleration[ id ] + acceleration[ PARTICLE_COUNT+id ]; acceleration_t_dt.w = 0.f;
+	float4 velocity_t = sortedVelocity[ id ];
+	
 	float4 acceleration_ = acceleration[ PARTICLE_COUNT+id ];// + acceleration[ id ];
-	float4 velocity_ = sortedVelocity[ id ];
 	// Semi-implicit Euler integration 
-	float4 newVelocity_ = velocity_ + timeStep * acceleration_; //newVelocity_.w = 0.f;
+	float4 velocity_t_dt = velocity_t + timeStep * acceleration_t_dt; //newVelocity_.w = 0.f;
 	float posTimeStep = timeStep * simulationScaleInv;			
-	float4 newPosition_ = position_ + posTimeStep * newVelocity_; //newPosition_.w = 0.f;
+	float4 position_t_dt = position_t + posTimeStep * velocity_t_dt; //newPosition_.w = 0.f;
 
 	//sortedVelocity[id] = newVelocity_;// sorted position, as well as velocity, 
 
 	// temporarily switched off. By the way, this causes no visible effect
-	computeInteractionWithBoundaryParticles(id,r0,neighborMap,particleIndexBack,particleIndex,position,velocity,&newPosition_,false, &newVelocity_,PARTICLE_COUNT);
+	computeInteractionWithBoundaryParticles(id,r0,neighborMap,particleIndexBack,particleIndex,position,velocity,&position_t_dt,false, &velocity_t_dt,PARTICLE_COUNT);
 
-	sortedPosition[PARTICLE_COUNT+id] = newPosition_;// in current version sortedPosition array has double size, 
+	sortedPosition[PARTICLE_COUNT+id] = position_t_dt;// in current version sortedPosition array has double size, 
 													 // PARTICLE_COUNT*2, to store both x(t) and x*(t+1)
 }
 
@@ -953,7 +956,7 @@ __kernel void pcisph_predictDensity(
 			if(r_ij2==0)
 			{
 				//printf("\a\n");
-				//printf("@@@|>>[%d]-[%d]<<|@@@ %E @@@@ (%f) (%f) ####",id,jd,((double)r_ij2),sortedPosition[PARTICLE_COUNT+id].w,sortedPosition[PARTICLE_COUNT+jd].w );
+				printf("@@@|>>[%d]-[%d]<<|@@@ %E @@@@ (%f) (%f) ####",id,jd,((double)r_ij2),sortedPosition[PARTICLE_COUNT+id].w,sortedPosition[PARTICLE_COUNT+jd].w );
 			}
 		}
 
@@ -1206,13 +1209,13 @@ float4 calculateProjectionOfPointToPlane(float4 ps, float4 pa, float4 pb, float4
                 pm.z = calcDeterminant3x3(a_1,a_2,b  )/denominator;
         }
         else {
-                //printf("\ndenominator equal to zero\n");        
+                printf("\ndenominator equal to zero\n");        
                 pm.w = -1;//indicates error 
-				//printf("%f\t%f\t%f\n",a_1_1, a_1_2, a_1_3);
-				//printf("%f\t%f\t%f\n",a_2_1, a_2_2, a_2_3);
-				//printf("%f\t%f\t%f\n",a_3_1, a_3_2, a_3_3);
-				//printf("\n{{%f,%f,%f},{%f,%f,%f},{%f,%f,%f}}\n", a_1.x, a_1.y, a_1.z, a_2.x, a_2.y, a_2.z,a_3.x, a_3.y, a_3.z);
-				//printf("\n");       
+				printf("%f\t%f\t%f\n",a_1_1, a_1_2, a_1_3);
+				printf("%f\t%f\t%f\n",a_2_1, a_2_2, a_2_3);
+				printf("%f\t%f\t%f\n",a_3_1, a_3_2, a_3_3);
+				printf("\n{{%f,%f,%f},{%f,%f,%f},{%f,%f,%f}}\n", a_1.x, a_1.y, a_1.z, a_2.x, a_2.y, a_2.z,a_3.x, a_3.y, a_3.z);
+				printf("\n");       
         }
 
         //printf("\npa=(%f,%f,%f)",pa.x,pa.y,pa.z);
@@ -1337,8 +1340,8 @@ __kernel void computeInteractionWithMembranes(
 
 						if(pos_p.w==-1)
 						{
-							//printf("calculateProjectionOfPointToPlane() returned error");
-							//printf("\n membran ID: %d\n",mdi + 1);
+							printf("calculateProjectionOfPointToPlane() returned error");
+							printf("\n membran ID: %d\n",mdi + 1);
 							return;
 						}
 
@@ -1371,7 +1374,7 @@ __kernel void computeInteractionWithMembranes(
 						}
 						else
 						{
-							//printf("computeInteractionWithMembranes error #001");
+							printf("computeInteractionWithMembranes error #001");
 							return;
 						}
 
