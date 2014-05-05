@@ -589,13 +589,12 @@ __kernel void pcisph_computeForcesAndInitPressure(
 	//float4 normalVector = (float4)( 0.0f, 0.0f, 0.0f, 0.0f );
 	//float  nV_length;
 	//int neighbor_cnt = 0;
-
-
+	float not_bp;
+	int jd_source_particle;
 	do{
 		if( (jd = NEIGHBOR_MAP_ID(neighborMap[ idx + nc])) != NO_PARTICLE_ID )
 		{
 			r_ij = NEIGHBOR_MAP_DISTANCE( neighborMap[ idx + nc] );
-
 			if(r_ij<hScaled)
 			{
 				//neighbor_cnt++;
@@ -603,7 +602,9 @@ __kernel void pcisph_computeForcesAndInitPressure(
 				rho_j = rho[jd];
 				vi = sortedVelocity[id];
 				vj = sortedVelocity[jd];
-				sum += (sortedVelocity[jd]-sortedVelocity[id])*(hScaled-r_ij)/rho[jd];
+				jd_source_particle = PI_SERIAL_ID( particleIndex[jd] );
+                not_bp = (float)((int)(position[ jd_source_particle ].w) != BOUNDARY_PARTICLE);
+                sum += (sortedVelocity[jd]*not_bp-sortedVelocity[id])*(hScaled-r_ij)/rho[jd];// formula 2.19 of B. Solenthaler's dissertation
 				//29aug_A.Palyanov_start_block
 				// M.Beckner & M.Teschner / Weakly compressible SPH for free surface flows. 2007.
 				//normalVector += sortedPosition[id]-sortedPosition[jd];
@@ -956,7 +957,7 @@ __kernel void pcisph_predictDensity(
 			if(r_ij2==0)
 			{
 				//printf("\a\n");
-				printf("@@@|>>[%d]-[%d]<<|@@@ %E @@@@ (%f) (%f) ####",id,jd,((double)r_ij2),sortedPosition[PARTICLE_COUNT+id].w,sortedPosition[PARTICLE_COUNT+jd].w );
+				//printf("@@@|>>[%d]-[%d]<<|@@@ %E @@@@ (%f) (%f) ####",id,jd,((double)r_ij2),sortedPosition[PARTICLE_COUNT+id].w,sortedPosition[PARTICLE_COUNT+jd].w );
 			}
 		}
 
@@ -1614,16 +1615,16 @@ __kernel void pcisph_integrate(
 	
 	// in Chao Fang realization here is also acceleration 'speed limit' applied
 
-	if(position_t_dt.x<xmin) position_t_dt.x = xmin;//A.Palyanov 30.08.2012
-	if(position_t_dt.y<ymin) position_t_dt.y = ymin;//A.Palyanov 30.08.2012
-	if(position_t_dt.z<zmin) position_t_dt.z = zmin;//A.Palyanov 30.08.2012
-	if(position_t_dt.x>xmax-0.000001f) position_t_dt.x = xmax-0.000001f;//A.Palyanov 30.08.2012
-	if(position_t_dt.y>ymax-0.000001f) position_t_dt.y = ymax-0.000001f;//A.Palyanov 30.08.2012
-	if(position_t_dt.z>zmax-0.000001f) position_t_dt.z = zmax-0.000001f;//A.Palyanov 30.08.2012
+	//if(position_t_dt.x<xmin) position_t_dt.x = xmin;//A.Palyanov 30.08.2012
+	//if(position_t_dt.y<ymin) position_t_dt.y = ymin;//A.Palyanov 30.08.2012
+	//if(position_t_dt.z<zmin) position_t_dt.z = zmin;//A.Palyanov 30.08.2012
+	//if(position_t_dt.x>xmax-0.000001f) position_t_dt.x = xmax-0.000001f;//A.Palyanov 30.08.2012
+	//if(position_t_dt.y>ymax-0.000001f) position_t_dt.y = ymax-0.000001f;//A.Palyanov 30.08.2012
+	//if(position_t_dt.z>zmax-0.000001f) position_t_dt.z = zmax-0.000001f;//A.Palyanov 30.08.2012
 	// better replace 0.0000001 with smoothingRadius*0.001 or smth like this 
 	float particleType = position[ id_source_particle ].w;
 	computeInteractionWithBoundaryParticles(id,r0,neighborMap,particleIndexBack,particleIndex,position,velocity,&position_t_dt, true, &velocity_t_dt,PARTICLE_COUNT);
-	velocity[ id_source_particle ] = (float4)((float)velocity_t_dt.x, (float)velocity_t_dt.y, (float)velocity_t_dt.z, 0.f);
+	velocity[ id_source_particle ] = (float4)((float)velocity_t_dt.x, (float)velocity_t_dt.y, (float)velocity_t_dt.z, (float)velocity_t_dt.w);
 	position[ id_source_particle ] = (float4)((float)position_t_dt.x, (float)position_t_dt.y, (float)position_t_dt.z, particleType);
 
 	acceleration[PARTICLE_COUNT*2+id_source_particle] = acceleration_t_dt;

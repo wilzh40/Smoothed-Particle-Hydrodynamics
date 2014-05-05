@@ -193,32 +193,45 @@ void owHelper::generateConfiguration(int stage, float *position, float *velocity
 
 	//============= create volume of liquid =========================================================================
 	p_type = LIQUID_PARTICLE;
-
-	for(x = 15*r0/2;x<(XMAX-XMIN)/2 +22*r0/2;x += r0)
-	for(y =  3*r0/2;y<(YMAX-YMIN)   - 3*r0/2;y += r0)
-	for(z =  3*r0/2+(ZMAX-ZMIN)*3/10;z<(ZMAX-ZMIN)*8/10-0*r0/2;z += r0)
+	int layer = 0;
+	for(x = 3 * r0 ;x < XMAX-3*r0;x += r0)
 	{
-						// stage==0 - preliminary run
-		if(stage==1)	// stage==1 - final run
+		for(y = YMAX * 5/6;y< YMAX-2*r0;y += r0)
 		{
-			if(i>=numOfLiquidP+numOfElasticP) 
+			for(z = r0;z < ZMAX-0.5*r0;z += r0)
 			{
-				printf("\nWarning! Final particle count >= preliminary particle count!\n");
-				exit(-3);
+								// stage==0 - preliminary run
+				if(stage==1)	// stage==1 - final run
+				{
+					if(i>=numOfLiquidP+numOfElasticP) 
+					{
+						printf("\nWarning! Final particle count >= preliminary particle count!\n");
+						exit(-3);
+					}
+					//write particle coordinates to corresponding arrays
+					position[ 4 * i + 0 ] = x;
+					position[ 4 * i + 1 ] = y;
+					position[ 4 * i + 2 ] = z;
+					position[ 4 * i + 3 ] = p_type;
+
+					velocity[ 4 * i + 0 ] = 0;
+					velocity[ 4 * i + 1 ] = 0;
+					velocity[ 4 * i + 2 ] = 0;
+					velocity[ 4 * i + 3 ] = layer;//if particle type is already defined in 'position', we don't need its duplicate here, right?
+				}
+				i++; // necessary for both stages
+				layer++;
 			}
-			//write particle coordinates to corresponding arrays
-			position[ 4 * i + 0 ] = x;
-			position[ 4 * i + 1 ] = y;
-			position[ 4 * i + 2 ] = z;
-			position[ 4 * i + 3 ] = p_type;
-
-			velocity[ 4 * i + 0 ] = 0;
-			velocity[ 4 * i + 1 ] = 0;
-			velocity[ 4 * i + 2 ] = 0;
-			velocity[ 4 * i + 3 ] = p_type;//if particle type is already defined in 'position', we don't need its duplicate here, right?
+			if(stage == 1){
+				std::cout<<layer<<std::endl;
+				layer = 0;
+				
+			}
 		}
-
-		i++; // necessary for both stages
+		if(stage == 1){
+			//std::cout<<layer<<std::endl;
+			//layer = 1;
+		}
 	}
 	// end
 
@@ -409,9 +422,12 @@ void owHelper::generateConfiguration(int stage, float *position, float *velocity
 
 	return;
 }
-
-std::string path = "/home/serg/git/ConfigurationGenerator/configurations/SiberneticTestingConfigs/";
-std::string prefix = "single_particle_gravity_test_";
+#if defined(_WIN32) || defined (_WIN64)
+	std::string path = "C://Users//Serg//git//openworm//ConfigurationGenerator//configurations//"; //"C://Users//Serg//git//openworm//ConfigurationGenerator//configurations//SiberneticTestingConfigs//";
+#else
+	std::string path = "/home/serg/git/ConfigurationGenerator/configurations/SiberneticTestingConfigs/";
+#endif
+std::string prefix = "temp_";//"single_particle_gravity_test_";
 void owHelper::preLoadConfiguration()
 {
 	try
@@ -435,6 +451,43 @@ void owHelper::preLoadConfiguration()
 		PARTICLE_COUNT_RoundedUp = ((( PARTICLE_COUNT - 1 ) / local_NDRange_size ) + 1 ) * local_NDRange_size;
 
 		printf("\nConfiguration we are going to load contains %d particles. Now plan to allocate memory for them.\n",PARTICLE_COUNT);
+	}
+	catch(std::exception &e){
+		std::cout << "ERROR: " << e.what() << std::endl;
+		exit( -1 );
+	}
+}
+void owHelper::loadConfigToFiles(float * position, float * velocity)
+{
+	try
+	{
+		prefix = "temp_";
+		std::string position_file_name = path + prefix + "position.txt";
+		ofstream out_f_position (position_file_name.c_str());
+		if( out_f_position.is_open() )
+		{
+			for(int i = 0; i < PARTICLE_COUNT; i++)
+			{
+				out_f_position << position[ 4 * i + 0 ] << "\t" << position[ 4 * i + 1 ] << "\t" << position[ 4 * i + 2 ] << "\t" << position[ 4 * i + 3 ] << "\n";
+			}
+			
+		}
+		out_f_position.close();
+		std::string velocity_file_name = path + prefix + "velocity.txt";
+		ofstream out_f_velocity (velocity_file_name.c_str());
+		if(out_f_velocity.is_open()){
+			for(int i = 0; i < PARTICLE_COUNT; i++)
+			{
+				out_f_velocity << velocity[ 4 * i + 0 ] << "\t" << velocity[ 4 * i + 1 ] << "\t" << velocity[ 4 * i + 2 ] << "\t" << velocity[ 4 * i + 3 ] << "\n";
+			}
+		}
+		out_f_velocity.close();
+		/*std::string velocity_file_name = path + prefix + "velocity.txt";
+		ofstream out_f_velocity (velocity_file_name);
+		for(int i = 0; i < numofEC; i++)
+		{
+			out_f << elasticConnection[ 4 * i + 0 ] << "\t" << elasticConnection[ 4 * i + 1 ] << "\t" << elasticConnection[ 4 * i + 2 ] << "\t" << elasticConnection[ 4 * i + 3 ] << "\n";
+		}*/
 	}
 	catch(std::exception &e){
 		std::cout << "ERROR: " << e.what() << std::endl;

@@ -2,6 +2,8 @@
 #include "owPhysicsFluidSimulator.h"
 #include "VectorMath.h"
 #include <stdio.h>
+#include <iostream>
+#include <fstream>
 
 extern int numOfLiquidP;
 extern int numOfElasticP;
@@ -49,6 +51,7 @@ float * muscle_activation_signal_cpp;
 extern const int tested_id;
 
 //===============================
+int steps;
 void zero_vel_buff(){
 	float * v_b = fluid_simulation->getVelocityBuffer();
 	for(int i = 0; i < PARTICLE_COUNT; i++){
@@ -63,6 +66,8 @@ void zero_vel_buff(){
 	//delete v_b;
 }
 bool need = true;
+int const num_of_slice = 11;
+float result[] = {0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,};
 void display(void)
 {
 	helper->refreshTime();
@@ -149,13 +154,13 @@ void display(void)
 	glEnd();
 
 	//glColor3ub(255,255,255);//yellow
-	p_indexb = fluid_simulation->getParticleIndexBuffer();
+	/*p_indexb = fluid_simulation->getParticleIndexBuffer();
 	int pib;
 	for(int i=0;i<PARTICLE_COUNT;i++)
 	{
 		pib = p_indexb[2*i + 1];
 		p_indexb[2*pib + 0] = i;
-	}
+	}*/
 	glPointSize(3.f);
 	//glBegin(GL_POINTS);
 	p_b = fluid_simulation->getPositionBuffer();
@@ -163,40 +168,77 @@ void display(void)
 	v_b = fluid_simulation->getVelocityBuffer();
 	float dc, rho;
 	int id = 0;
-	/*if(need){
-		float * zero_position = new float[4];
-		float * zero_velocity_muscle = new float[4];
-		
-		zero_position[0] = p_b[ id * 4 + 0 ];
-		zero_position[1] = p_b[ id * 4 + 1 ];
-		zero_position[2] = p_b[ id * 4 + 2 ];
-		zero_position[3] = p_b[ id * 4 + 3 ];
-		zero_velocity[0] = v_b[ id * 4 + 0 ];
-		zero_velocity[1] = v_b[ id * 4 + 1 ];
-		zero_velocity[2] = v_b[ id * 4 + 2 ];
-		zero_velocity[3] = v_b[ id * 4 + 3 ];
-		if(zero_velocity[1] > 0.f){
-//			std::cout <<"velocity:" << zero_velocity[0] << "\t" << zero_velocity[1] << "\t" << zero_velocity[2] << "\t" << std::endl;
-			zero_vel_buff();
-			need = false;
+//	if(need && iterationCount < 480){
+//		float * zero_position = new float[4];
+//		float * zero_velocity = new float[4];
+//		
+//		zero_position[0] = p_b[ id * 4 + 0 ];
+//		zero_position[1] = p_b[ id * 4 + 1 ];
+//		zero_position[2] = p_b[ id * 4 + 2 ];
+//		zero_position[3] = p_b[ id * 4 + 3 ];
+//		zero_velocity[0] = v_b[ id * 4 + 0 ];
+//		zero_velocity[1] = v_b[ id * 4 + 1 ];
+//		zero_velocity[2] = v_b[ id * 4 + 2 ];
+//		zero_velocity[3] = v_b[ id * 4 + 3 ];
+//		if(zero_velocity[1] > 0.f){
+////			std::cout <<"velocity:" << zero_velocity[0] << "\t" << zero_velocity[1] << "\t" << zero_velocity[2] << "\t" << std::endl;
+//			zero_vel_buff();
+//			//need = false;
+//		}
+//	}
+	
+	if( iterationCount  > 500 && steps < 20000){
+		std::vector<Vector3D> histogramm;
+		//histogramm.resize(num_of_slice);
+		for(int i = 0; i<PARTICLE_COUNT; i++)
+		{
+			if(int(p_b[i*4+3]) != BOUNDARY_PARTICLE){
+				if(p_b[i*4 + 1] <= YMAX * 1/2 && p_b[i*4 + 1] >= YMAX * 1/2 - r0 / 5.0){
+					Vector3D v(v_b[i*4+0],v_b[i*4+1],v_b[i*4+2]);
+					v.count = i;
+					histogramm.push_back(v);
+				}
+			}
+			
 		}
-	}*/
+		if(histogramm.size()!=0){
+			steps++;
+			std::ofstream out_f ("v_log.txt",std::ios_base::app);
+			std::cout<< "===================HISTOGRAM====================" <<std::endl;
+			/*for(int i=0;i<num_of_slice;i++){
+				out_f << i << "\t" << result[i] << "\n";
+			}*/
+			for(int i=0;i<histogramm.size();i++){
+				double l = histogramm[i].length();
+				out_f << iterationCount << "\t" << i << "\t" << histogramm[i].count << "\t" << p_b[histogramm[i].count*4 + 1]-YMAX/2 << "\t"<< p_b[histogramm[i].count*4]-XMAX/2 << "\t" << p_b[histogramm[i].count*4 + 2]-ZMAX/2 << "\t"  << l << "\n";
+			}
+			out_f <<"=======================\n";
+			std::cout<< "======================END=======================" <<std::endl;
+			out_f.close();
+		}
+		//exit(1);
+	}
+	if(steps >= 20000){
+		//owHelper::loadConfigToFiles(p_b,v_b);
+		exit(0);
+	}
 	for(int i = 0; i<PARTICLE_COUNT; i++)
 	{
-		rho = d_b[ p_indexb[ i * 2 + 0 ] ];
-		if( rho < 0 ) rho = 0;
-		if( rho > 2 * rho0) rho = 2 * rho0;
-		dc = 100.0 * ( rho - rho0 ) / rho0 ;
-		if(dc>1.f) dc = 1.f;
-		//  R   G   B
-		glColor4f(  0,  0,  1, 1.0f);//blue
-		if( (dc=100*(rho-rho0*1.00f)/rho0) >0 )	glColor4f(   0,  dc,   1,1.0f);//cyan
-		if( (dc=100*(rho-rho0*1.01f)/rho0) >0 )	glColor4f(   0,   1,1-dc,1.0f);//green
-		if( (dc=100*(rho-rho0*1.02f)/rho0) >0 )	glColor4f(  dc,   1,   0,1.0f);//yellow
-		if( (dc=100*(rho-rho0*1.03f)/rho0) >0 )	glColor4f(   1,1-dc,   0,1.0f);//red
-		if( (dc=100*(rho-rho0*1.04f)/rho0) >0 )	glColor4f(   1,   0,   0,1.0f);
+		//rho = d_b[ p_indexb[ i * 2 + 0 ] ];
+		//if( rho < 0 ) rho = 0;
+		//if( rho > 2 * rho0) rho = 2 * rho0;
+		//dc = 100.0 * ( rho - rho0 ) / rho0 ;
+		//if(dc>1.f) dc = 1.f;
+		////  R   G   B
+		//glColor4f(  0,  0,  1, 1.0f);//blue
+		//if( (dc=100*(rho-rho0*1.00f)/rho0) >0 )	glColor4f(   0,  dc,   1,1.0f);//cyan
+		//if( (dc=100*(rho-rho0*1.01f)/rho0) >0 )	glColor4f(   0,   1,1-dc,1.0f);//green
+		//if( (dc=100*(rho-rho0*1.02f)/rho0) >0 )	glColor4f(  dc,   1,   0,1.0f);//yellow
+		//if( (dc=100*(rho-rho0*1.03f)/rho0) >0 )	glColor4f(   1,1-dc,   0,1.0f);//red
+		//if( (dc=100*(rho-rho0*1.04f)/rho0) >0 )	glColor4f(   1,   0,   0,1.0f);
 		if((int)p_b[i*4 + 3] != BOUNDARY_PARTICLE /*&& (int)p_b[i*4 + 3] != ELASTIC_PARTICLE*/){
 			glBegin(GL_POINTS);
+			glColor4f(   0,0,   1,1.0f);
 			if((int)p_b[i*4+3]==2) glColor4f(   1,   1,   0,  1.0f);
 			/*if( i == id){
 				glColor4f(   1,   0,   0,  1.0f);*/
@@ -204,20 +246,21 @@ void display(void)
 			//}
 			//glVertex3f( (p_b[i*4])*sc , (p_b[i*4+1])*sc, (p_b[i*4+2])*sc );
 			glEnd();
-			/*if( 1){
-				glBegin(GL_LINES);
+			/**/if( 1){
+				/*glBegin(GL_LINES);
 					glVertex3f( (p_b[i*4]-XMAX/2)*sc , (p_b[i*4+1]-YMAX/2)*sc, (p_b[i*4+2]-ZMAX/2)*sc );
-					glVertex3f( (p_b[i*4] + v_b[i*4]-XMAX/2)*sc , (p_b[i*4 + 1] + v_b[i*4 + 1]-YMAX/2)*sc, (p_b[i*4 + 2] + v_b[i*4 + 2]-ZMAX/2)*sc );
-				glEnd();
-			}*/
+					float c1 = 1.0f;
+					glVertex3f( ((p_b[i*4] + c1 * v_b[i*4]-XMAX/2)*sc) , (c1*(p_b[i*4 + 1] + c1 * v_b[i*4 + 1]-YMAX/2)*sc), ((p_b[i*4 + 2] + c1 * v_b[i*4 + 2]-ZMAX/2)*sc) );
+				glEnd();*/
+			}/**/
 		}
 		else{
-			/*glBegin(GL_LINES);
+			glBegin(GL_LINES);
 			//glVertex3f( (p_b[i*4])*sc , (p_b[i*4+1])*sc, (p_b[i*4+2])*sc );
 			//glVertex3f( (p_b[i*4] + v_b[i*4])*sc , (p_b[i*4 + 1] + v_b[i*4 + 1])*sc, (p_b[i*4 + 2] + v_b[i*4 + 2])*sc );
 			glVertex3f( (p_b[i*4]-XMAX/2)*sc , (p_b[i*4+1]-YMAX/2)*sc, (p_b[i*4+2]-ZMAX/2)*sc );
-			glVertex3f( (p_b[i*4] + v_b[i*4]-XMAX/2)*sc , (p_b[i*4 + 1] + v_b[i*4 + 1]-YMAX/2)*sc, (p_b[i*4 + 2] + v_b[i*4 + 2]-ZMAX/2)*sc );
-			glEnd();*/
+			glVertex3f( (p_b[i*4] + v_b[i*4] * 1-XMAX/2)*sc , (p_b[i*4 + 1] + v_b[i*4 + 1] * 1-YMAX/2)*sc, (p_b[i*4 + 2] + v_b[i*4 + 2] * 1-ZMAX/2)*sc );
+			glEnd();
 		}
 	}
 	e_c = fluid_simulation->getElasticConnections();

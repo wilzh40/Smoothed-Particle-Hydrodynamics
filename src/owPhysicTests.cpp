@@ -18,8 +18,8 @@ float true_time = 0.f;
 float gravity = 9.81;
 float eps = 0.0001f;
 void physic_friction_test(){
-	int iterationNum = 300;
-	int startIteration = iterationNum - 100;
+	int start_v_iteration = 550;
+	int end_iteration = start_v_iteration + 200;
 	owPhysicsFluidSimulator * fluid_simulation;
 	owHelper * helper;
 	int i = 0;
@@ -31,15 +31,17 @@ void physic_friction_test(){
 	float * zero_velocity = new float[4];
 	helper = new owHelper();
 	fluid_simulation = new owPhysicsFluidSimulator(helper);
-	while( i <= iterationNum ){
+	bool first = true;
+	while(i <= end_iteration){
 		get_buffs(fluid_simulation, zero_position, zero_velocity, zero_point);
-		if(zero_velocity[1] > 0.f){
+		if(zero_velocity[1] > 0.f && i < start_v_iteration){
 			std::cout <<"velocity:" << zero_velocity[0] << "\t" << zero_velocity[1] << "\t" << zero_velocity[2] << "\t" << std::endl;
 			zero_vel_buff(fluid_simulation);
-			i = 0;
-		}
-		if(i == 200){
-			get_buffs(fluid_simulation, initial_position, initial_velocity, tested_id);
+		}else{
+			if(i > start_v_iteration && first){
+				get_buffs(fluid_simulation, initial_position, initial_velocity, tested_id);
+				first = false;
+			}
 		}
 		fluid_simulation->simulationStep();
 		helper->refreshTime();
@@ -48,7 +50,7 @@ void physic_friction_test(){
 	get_buffs(fluid_simulation, end_position, end_velocity, tested_id);
 	float result = get_dist(initial_position,end_position);
 	std::cout << "Distance :" << result * simulationScale << " m" << std::endl;
-	std::cout << "Time :" << (float)(100) * timeStep << " s" << std::endl;
+	std::cout << "Time :" << (float)(end_iteration - start_v_iteration) * timeStep << " s" << std::endl;
 	delete fluid_simulation;
 	delete helper;
 }
@@ -100,6 +102,7 @@ void gravity_test_1(){
 	calc_mass_center(fluid_simulation, initial_position);
 	float s = 0.f;
 	float s_b = 0.f;
+
 	std::string file_name = "./test_graphs/gravity_test_single_particle.txt";
 	std::ofstream out_f (file_name.c_str(), std::ofstream::out);
 	if( out_f.is_open() )

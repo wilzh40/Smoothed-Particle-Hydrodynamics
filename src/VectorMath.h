@@ -12,12 +12,13 @@ public:
 	double x;									// the x value of this Vector3D
 	double y;									// the y value of this Vector3D
 	double z;									// the z value of this Vector3D
-
+	int count;
 	Vector3D()									// Constructor to set x = y = z = 0
 	{
 		x = 0;
 		y = 0;
 		z = 0;
+		count = 0;
 	}
 
 	Vector3D(double x, double y, double z)			// Constructor that initializes this Vector3D to the intended values of x, y and z

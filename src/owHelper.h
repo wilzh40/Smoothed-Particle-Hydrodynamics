@@ -20,6 +20,7 @@ public:
 	static void log_bufferf( const float * buffer, const int element_size,const int global_size, const char * fileName);
 	static void log_bufferi( const int * buffer, const int element_size,const int global_size, const char * fileName);
 	static void loadConfigToFile(float * position, float * velocity, float * elasticConnection, int numofEC, const char * file_name = "./out_config/out_config_step_0.txt");
+	static void loadConfigToFiles(float * position, float * velocity);
 	void watch_report(const char *str);
 	double get_elapsedTime() { return elapsedTime; };
 	void refreshTime();	
