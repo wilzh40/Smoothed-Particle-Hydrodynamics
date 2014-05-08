@@ -153,6 +153,48 @@ void display(void)
 	
 	glEnd();
 
+	glBegin(GL_LINES);
+	glColor3ub(255, 0, 0);
+	glVertex3d((0 + 0.5*r0)*sc,(0 + 3*r0)*sc,  (0 + 4*r0)*sc);
+	glVertex3d((0 + 0.5*r0)*sc,(0 + 3*r0)*sc, -(0 + 4*r0)*sc);
+
+	glVertex3d((0 + 0.5*r0)*sc,(0 + 3*r0)*sc, (0 + 4*r0)*sc);
+	glVertex3d(-(0 + 0.5*r0)*sc,(0 + 3*r0)*sc,(0 + 4*r0)*sc);
+
+	glVertex3d(-(0 + 0.5*r0)*sc,(0 + 3*r0)*sc, (0 + 4*r0)*sc);
+	glVertex3d(-(0 + 0.5*r0)*sc,(0 + 3*r0)*sc, -(0 + 4*r0)*sc);
+
+	glVertex3d(-(0 + 0.5*r0)*sc,(0 + 3*r0)*sc, -(0 + 4*r0)*sc);
+	glVertex3d((0 + 0.5*r0)*sc,(0 + 3*r0)*sc, -(0 + 4*r0)*sc);
+
+	glColor3ub(0, 255, 0);
+	glVertex3d((0 + 0.5*r0)*sc,(0 - 3*r0)*sc,  (0 + 4*r0)*sc);
+	glVertex3d((0 + 0.5*r0)*sc,(0 - 3*r0)*sc, -(0 + 4*r0)*sc);
+
+	glVertex3d((0 + 0.5*r0)*sc, (0 - 3*r0)*sc, (0 + 4*r0)*sc);
+	glVertex3d(-(0 + 0.5*r0)*sc,(0 - 3*r0)*sc,(0 + 4*r0)*sc);
+
+	glVertex3d(-(0 + 0.5*r0)*sc,(0 - 3*r0)*sc, (0 + 4*r0)*sc);
+	glVertex3d(-(0 + 0.5*r0)*sc,(0 - 3*r0)*sc, -(0 + 4*r0)*sc);
+
+	glVertex3d(-(0 + 0.5*r0)*sc,(0 - 3*r0)*sc, -(0 + 4*r0)*sc);
+	glVertex3d((0 + 0.5*r0)*sc, (0 - 3*r0)*sc, -(0 + 4*r0)*sc);
+
+	glColor3ub(255, 0, 0);
+	glVertex3d((0 + 0.5*r0)*sc,(0-3*r0)*sc,  (0 +4*r0)*sc);
+	glVertex3d((0 + 0.5*r0)*sc,(0+3*r0)*sc, (0 + 4*r0)*sc);
+
+	glVertex3d(-(0 + 0.5*r0)*sc,(0+3*r0)*sc, (0 + 4*r0)*sc);
+	glVertex3d(-(0 + 0.5*r0)*sc,(0-3*r0)*sc,(0 + 4*r0)*sc);
+
+	glVertex3d(-(0 + 0.5*r0)*sc,(0-3*r0)*sc, -(0 + 4*r0)*sc);
+	glVertex3d(-(0 + 0.5*r0)*sc,(0+3*r0)*sc, -(0 + 4*r0)*sc);
+
+	glVertex3d((0 + 0.5*r0)*sc,(0-r0*3)*sc, -(0 + 4*r0)*sc);
+	glVertex3d((0 + 0.5*r0)*sc,(0+3*r0)*sc, -(0 + 4*r0)*sc);
+
+	glEnd();
+
 	//glColor3ub(255,255,255);//yellow
 	/*p_indexb = fluid_simulation->getParticleIndexBuffer();
 	int pib;
@@ -193,7 +235,8 @@ void display(void)
 		for(int i = 0; i<PARTICLE_COUNT; i++)
 		{
 			if(int(p_b[i*4+3]) != BOUNDARY_PARTICLE){
-				if(p_b[i*4 + 1] <= YMAX * 1/2 && p_b[i*4 + 1] >= YMAX * 1/2 - r0 / 5.0){
+				if((p_b[i*4 + 1] <= YMAX * 1/2 + 3 * r0 && p_b[i*4 + 1] >= YMAX * 1/2 - 3 * r0) && 
+					(p_b[i*4] <= XMAX * 1/2 + r0 / 2 && p_b[i*4] >= XMAX * 1/2 - r0 / 2)){
 					Vector3D v(v_b[i*4+0],v_b[i*4+1],v_b[i*4+2]);
 					v.count = i;
 					histogramm.push_back(v);
@@ -218,10 +261,10 @@ void display(void)
 		}
 		//exit(1);
 	}
-	if(steps >= 20000){
-		//owHelper::loadConfigToFiles(p_b,v_b);
-		exit(0);
-	}
+	//if(steps >= 40000){
+	//	owHelper::loadConfigToFiles(p_b,v_b);
+	//	exit(1);
+	//}else steps++;
 	for(int i = 0; i<PARTICLE_COUNT; i++)
 	{
 		//rho = d_b[ p_indexb[ i * 2 + 0 ] ];

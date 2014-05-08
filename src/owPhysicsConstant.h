@@ -12,11 +12,11 @@
 const float h = 3.34f;
 const float r0 = 0.5f * h; // distance between two boundary particle
 #define XMIN 0
-#define XMAX 116.9//51.0042063076//10.f * r0//33.4//24.64278211//24.64278211//33.4000081813//88.844//120.24f //11.69f
+#define XMAX 70*r0//51.0042063076//10.f * r0//33.4//24.64278211//24.64278211//33.4000081813//88.844//120.24f //11.69f
 #define YMIN 0
-#define YMAX 751.5//515.573339198//120.f * r0//320.198396832//368.398493//67.798493//33.4000081813//88.844//80.16f //11.69f
+#define YMAX 550* r0//515.573339198//120.f * r0//320.198396832//368.398493//67.798493//33.4000081813//88.844//80.16f //11.69f
 #define ZMIN 0
-#define ZMAX 116.9//51.0042063076///10.f * r0//33.4//24.64278211//24.6427721146//66.7999918187//88.844//182.03f //11.69f
+#define ZMAX 70*r0//51.0042063076///10.f * r0//33.4//24.64278211//24.6427721146//66.7999918187//88.844//182.03f //11.69f
 
 const float rho0 = 1000.0f;
 const float stiffness = 0.75f;
@@ -44,7 +44,7 @@ const float gravity_z = 0.0f;
 extern const float delta;
 const int maxIteration = 3;
 const int ELASTIC_CONNECTIONS_COUNT = 0;
-const float surfTensCoeff = 0.0f;//-4.5e-10f;//-4.5e-10f;//-1.5e-15f;//-4.5e-10f;//-0.0013f;//
+const float surfTensCoeff = -4.5e-10f;//-4.5e-10f;//-1.5e-15f;//-4.5e-10f;//-0.0013f;//
 const float elasticityCoeff = 1.95e-05f;//10000.0f * mass
 
 #endif // #ifndef OW_PHYSICS_CONSTANT_H
