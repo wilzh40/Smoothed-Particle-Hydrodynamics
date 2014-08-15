@@ -1,5 +1,8 @@
 import math
+import os
 import numpy as np
+import sys
+from pylab import *
 
 def parallel_waves(n=24, #26 for our first test?
                    time=0, 
@@ -37,12 +40,33 @@ def parallel_waves(n=24, #26 for our first test?
         double_wave_2.append(i)
         
     return (double_wave_1,double_wave_2)
+    
+def input_neural_data():
+	volts = {}
+	traces = open('c302_A.dat','r')
 
+	print ("Loaded .dat file")
+	# Very inefficient...
+	for line in traces:
+		if not line.strip().startswith('#'):
+			points = line.split()
+			for i in range(len(points)):
+				if not volts.has_key(i):
+					volts[i] = []
+				volts[i].append(float(points[i])+0.0020*i)
+
+	
+	return volts
+        
 class muscle_simulation():
 
-    def __init__(self,increment=1.0):
-        self.increment = increment
-        self.t = 0
+    def __init__(self,increment=10.0):
+		os.getcwd()
+		self.increment = increment
+		self.t = 0
+		self.signal_array = input_neural_data()
+   
+        
 
     def run(self,do_plot = True):
         self.contraction_array =  parallel_waves(time = self.t)
