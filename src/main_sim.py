@@ -53,27 +53,46 @@ def input_neural_data():
 			for i in range(len(points)):
 				if not volts.has_key(i):
 					volts[i] = []
-				volts[i].append(float(points[i])+0.0020*i)
+				volts[i].append(float(points[i]))
+				#print(float(points[i])))
+	return (volts)
 
+def neural_data_for_time(input_neural_data,time = 1):
 	
-	return volts
-        
+	time_array = []
+	for neuron in input_neural_data:
+
+			neuron_array = input_neural_data[neuron]
+		
+			time_array.append(float(neuron_array[time]))
+			
+
+	print(time_array)
+	return (time_array)
+
 class muscle_simulation():
 
-    def __init__(self,increment=10.0):
+    def __init__(self,increment=1):
 		os.getcwd()
 		self.increment = increment
 		self.t = 0
 		self.signal_array = input_neural_data()
+		
+		
+
    
-        
+    
 
     def run(self,do_plot = True):
-        self.contraction_array =  parallel_waves(time = self.t)
-        self.t += self.increment
-        return list(np.concatenate([self.contraction_array[0],
-                                    self.contraction_array[1],
-                                    self.contraction_array[1],
-                                    self.contraction_array[0]]))
+		self.t += self.increment
+		print("a")
+		self.time_array = neural_data_for_time(self.signal_array,self.t)
+		print(self.time_array)
+		return list(self.time_array)
         #return(self.contraction_array)
+        
+	
+		
+        
+     
         
